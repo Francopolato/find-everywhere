@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Build (PyInstaller)
+build/
+dist/
+*.spec
+
+# Tooling
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+
+# Dati locali dell'app (stanno in %APPDATA%, qui non devono esistere)
+*.db
+*.db-wal
+*.db-shm
+config.json
+*.log
+
+# Editor / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
