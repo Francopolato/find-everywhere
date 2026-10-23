@@ -1,7 +1,7 @@
 # find-everywhere (SpotlightPy)
 
-Launcher stile *Spotlight / PowerToys Run* per Windows, in Python (solo stdlib
-+ pywin32 per l'indice di Windows). Nasce per cercare file che stanno in
+Launcher stile *Spotlight / PowerToys Run* per Windows, in Python (solo stdlib,
+più pywin32 per l'indice di Windows). Nasce per cercare file che stanno in
 **cartelle di rete non indicizzabili** da Windows Search.
 
 ```text
@@ -193,6 +193,12 @@ command line esatta usata (`script 'Nome': …`).
 Nelle impostazioni: **Nuovo** aggiunge una riga `+ nuovo (da compilare)`
 nell'elenco, poi compili Nome / Comando / Hotkey e premi **Salva script**
 (infine **Salva** per scrivere il config).
+
+Gli script configurati compaiono anche nel **menu del tasto destro** su un
+risultato, con il nome scelto e la hotkey accanto (`Apri con Peek  [CTRL+ALT+1]`);
+se sono più di tre finiscono nel sottomenu `Script (N)`. Senza script il menu
+mostra solo Apri / Apri cartella / Copia percorso (più una voce disabilitata che
+lo segnala).
 
 ## Impostazioni / file
 

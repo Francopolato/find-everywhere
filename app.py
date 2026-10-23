@@ -35,7 +35,7 @@ from query import name_rank
 from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
-VERSION = "1.13"
+VERSION = "1.14"
 
 
 def log(msg: str) -> None:
@@ -884,12 +884,14 @@ class SpotlightApp:
             log(f"errore script: {type(exc).__name__}: {exc}")
             self.set_status(f"Errore script: {exc}", "err")
 
-    def _context_menu(self, event, idx):
-        self._select(idx)
-        it = self._selected_item()
-        if not it:
-            return
-        path = it["path"]
+    def _script_label(self, script: dict) -> str:
+        label = script.get("name") or "script"
+        if script.get("hotkey"):
+            label += f"  [{script['hotkey'].upper()}]"
+        return label
+
+    def _build_context_menu(self, path: str) -> tk.Menu:
+        """Menu del tasto destro: azioni sull'elemento + uno script per voce."""
         m = tk.Menu(self.root, tearoff=0, bg=C["bg2"], fg=C["fg"],
                     activebackground=C["accent"], activeforeground="#fff",
                     bd=0)
@@ -897,15 +899,35 @@ class SpotlightApp:
         m.add_command(label="Apri cartella contenitrice",
                       command=lambda: self._activate(True))
         m.add_command(label="Copia percorso", command=lambda: self._copy_path(path))
-        scripts = self.cfg.get("scripts", [])
-        if scripts:
-            m.add_separator()
+        m.add_separator()
+
+        scripts = [s for s in self.cfg.get("scripts", []) if s.get("command")]
+        if not scripts:
+            m.add_command(label="Nessuno script: aggiungilo nelle impostazioni",
+                          state="disabled")
+            return m
+
+        if len(scripts) <= 3:
             for s in scripts:
-                label = s.get("name") or "script"
-                if s.get("hotkey"):
-                    label += f"  [{s['hotkey'].upper()}]"
-                m.add_command(label=label,
+                m.add_command(label=self._script_label(s),
                               command=lambda sc=s: self._run_script(sc, path))
+        else:
+            # con molti script resto leggibile: sottomenu "Script (N)"
+            sub = tk.Menu(m, tearoff=0, bg=C["bg2"], fg=C["fg"],
+                          activebackground=C["accent"], activeforeground="#fff",
+                          bd=0)
+            for s in scripts:
+                sub.add_command(label=self._script_label(s),
+                                command=lambda sc=s: self._run_script(sc, path))
+            m.add_cascade(label=f"Script ({len(scripts)})", menu=sub)
+        return m
+
+    def _context_menu(self, event, idx):
+        self._select(idx)
+        it = self._selected_item()
+        if not it:
+            return
+        m = self._build_context_menu(it["path"])
         try:
             m.tk_popup(event.x_root, event.y_root)
         finally:
