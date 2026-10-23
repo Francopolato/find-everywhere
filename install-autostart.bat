@@ -1,21 +1,50 @@
 @echo off
 rem Avvio automatico di find-everywhere al login (solo utente corrente, no admin).
 rem Copia l'exe in %LOCALAPPDATA%\find-everywhere e crea il collegamento nella
-rem cartella Esecuzione automatica, con il parametro --startup:
-rem la finestra resta nascosta e si apre solo con la hotkey.
+rem cartella Esecuzione automatica con il parametro --startup: la finestra
+rem resta nascosta e si apre solo con la hotkey.
+rem
+rem Uso:  install-autostart.bat                       (cerca l'exe da solo)
+rem       install-autostart.bat "C:\percorso\File.exe" (exe indicato a mano)
 setlocal
 cd /d "%~dp0"
 
-set "EXE="
-if exist "%~dp0FindEverywhere.exe" set "EXE=%~dp0FindEverywhere.exe"
+set "EXE=%~1"
+
+if defined EXE (
+  if not exist "%EXE%" (
+    echo ERRORE: il file indicato non esiste:
+    echo   %EXE%
+    pause
+    exit /b 1
+  )
+)
+
+if not defined EXE if exist "%~dp0FindEverywhere.exe" set "EXE=%~dp0FindEverywhere.exe"
 if not defined EXE if exist "%~dp0dist\FindEverywhere.exe" set "EXE=%~dp0dist\FindEverywhere.exe"
 if not defined EXE if exist "%~dp0dist\SpotlightPy.exe" set "EXE=%~dp0dist\SpotlightPy.exe"
+if not defined EXE if exist "%LOCALAPPDATA%\find-everywhere\FindEverywhere.exe" set "EXE=%LOCALAPPDATA%\find-everywhere\FindEverywhere.exe"
 
 if not defined EXE (
-  echo ERRORE: non trovo l'exe. Compila prima con:  build.bat FindEverywhere
+  echo ERRORE: non trovo l'eseguibile di find-everywhere.
+  echo.
+  echo Ho cercato in:
+  echo   %~dp0FindEverywhere.exe
+  echo   %~dp0dist\FindEverywhere.exe
+  echo   %~dp0dist\SpotlightPy.exe
+  echo   %LOCALAPPDATA%\find-everywhere\FindEverywhere.exe
+  echo.
+  dir /b "%~dp0dist" 2>nul
+  echo.
+  echo Se l'exe e' altrove, passalo come argomento:
+  echo   install-autostart.bat "C:\percorso\FindEverywhere.exe"
+  echo.
+  echo Per compilarlo:  build.bat FindEverywhere
   pause
   exit /b 1
 )
+
+echo Trovato: %EXE%
 
 set "DESTDIR=%LOCALAPPDATA%\find-everywhere"
 if not exist "%DESTDIR%" mkdir "%DESTDIR%"
