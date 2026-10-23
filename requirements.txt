@@ -1,0 +1,13 @@
+# Dipendenze di find-everywhere (SpotlightPy)
+#   pip install -r requirements.txt
+#
+# Tutto il resto e' standard library (tkinter, sqlite3, ctypes, subprocess...).
+#
+# pywin32 serve SOLO per interrogare l'indice di Windows Search (COM/OLEDB).
+# Senza, l'app funziona lo stesso: indice locale SQLite + scansione delle
+# cartelle configurate (le prime due fonti di ricerca restano attive).
+pywin32>=306
+
+# Per compilare l'eseguibile (non serve per eseguire l'app dal sorgente):
+#   pip install pyinstaller
+# poi: build.bat
