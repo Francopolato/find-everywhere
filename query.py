@@ -1,8 +1,8 @@
 """Interpretazione della query di ricerca, con il carattere jolly `*`.
 
 `*` vale "uno o più caratteri qualsiasi", es:
-    scafallatur*metall*ord*23440
-trova i nomi che contengono "scafallatur", poi (dopo almeno un carattere)
+    scaffalatur*metall*ord*23440
+trova i nomi che contengono "scaffalatur", poi (dopo almeno un carattere)
 "metall", poi "ord", poi "23440", in quest'ordine.
 
 Senza `*` la ricerca resta la solita sottostringa.

@@ -35,7 +35,7 @@ from query import name_rank
 from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
-VERSION = "1.11"
+VERSION = "1.12"
 
 
 def log(msg: str) -> None:
@@ -227,6 +227,7 @@ class SpotlightApp:
         self.busy_scan = False
         self.busy_index = False
         self.busy_win = False
+        self._pending = False
         self.status_text = ""
         self.status_kind = "dim"
         self._spin = 0
@@ -539,16 +540,19 @@ class SpotlightApp:
         if self._debounce:
             with suppress(Exception):
                 self.root.after_cancel(self._debounce)
+        self._pending = True
         self._debounce = self.root.after(130, self._run_search)
 
     def _run_search(self):
         self._debounce = None
+        self._pending = False
         q = self.entry.get().strip()
         self.query_now = q
         self._stop_scan()
         self.sel = 0
         self.offset = 0
         self.results = []
+        self.view = []
         self.seen = set()
 
         if query_is_empty(q):
@@ -701,9 +705,11 @@ class SpotlightApp:
         self.row_widgets = []
 
         if not self.view:
-            if not self.query_now:
+            if self._pending or self.busy_win or self.busy_scan:
+                msg = "Ricerca in corso…"
+            elif not self.query_now:
                 msg = ("Scrivi per cercare…   "
-                       "(* = uno o più caratteri, es. scafall*metall*ord*23440)")
+                       "(* = uno o più caratteri, es. scaffalatur*ord*23440)")
             elif self.results:
                 msg = (f"Nessun risultato con il filtro «{self._filter_text()}» "
                        f"({len(self.results)} trovati)")
@@ -972,9 +978,10 @@ class SpotlightApp:
             log(f"ricerca {q!r}: windows={len(items)} "
                 f"[{' '.join(info.get('strategies') or [])}] "
                 f"errore={info.get('error')}")
-            merged = self._merge(items, "pc")
-            if merged:
-                self._render()
+            self._merge(items, "pc")
+            # re-render sempre: se la query non trova nulla va tolto il
+            # segnaposto "Ricerca in corso…" (e le righe della ricerca prima)
+            self._render()
             detail = ", ".join(info.get("strategies") or []) or "nessuna risposta"
             if info.get("error"):
                 self.set_status(f"Windows Search: errore — {info['error']}", "warn")
@@ -1000,10 +1007,12 @@ class SpotlightApp:
                 self.set_status(
                     f"Scansione completata · {indexed} file esaminati · "
                     f"{len(self.results)} risultati", "dim")
+                self._render()
         elif kind == "scan_error":
             if ev[1] == self.scan_id:
                 self.busy_scan = False
                 self.set_status(f"Errore scansione: {ev[2]}", "err")
+                self._render()
         elif kind == "idx":
             self.set_status(ev[1], "accent")
         elif kind == "idx_done":

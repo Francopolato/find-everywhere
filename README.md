@@ -51,10 +51,10 @@ Explorer una cartella sbagliata.
 `*` significa **uno o più caratteri qualsiasi**:
 
 ```text
-scafallatur*metall*ord*23440
+scaffalatur*metall*ord*23440
 ```
 
-trova i nomi che contengono `scafallatur`, poi `metall`, poi `ord`, poi `23440`.
+trova i nomi che contengono `scaffalatur`, poi `metall`, poi `ord`, poi `23440`.
 Un `*` in testa o in coda vale "qualsiasi cosa" (`*2024`, `contratto*`).
 Senza `*` la ricerca resta quella di sempre.
 
