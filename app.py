@@ -35,7 +35,7 @@ from query import name_rank
 from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
-VERSION = "1.10"
+VERSION = "1.11"
 
 
 def log(msg: str) -> None:

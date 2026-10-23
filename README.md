@@ -63,13 +63,14 @@ Come viene applicato:
 * **indice locale (SQLite)** e **scansione cartelle**: conversione in `LIKE`
   (`*` → `_%`, cioè almeno un carattere) oppure in regex, quindi sottostringa
   vera;
-* **Windows Search**: ogni termine diventa un **prefisso di parola**
-  (`CONTAINS(System.FileName, '"scafallatur*" AND "metall*" …')`), tutti i
-  termini devono comparire ma **in qualunque ordine**. È il motivo per cui la
-  ricerca è veloce (0,1 s): `LIKE '%term%'` costava 12+ secondi perché non usa
-  l'indice. Conseguenza: una ricerca a metà parola (es. `tratt` dentro
-  `contratto`) non trova nulla in Windows Search, mentre la trova la scansione
-  delle cartelle configurate.
+* **Windows Search**, in base a quanti termini ci sono:
+  * **un solo termine** → `System.ItemNameDisplay LIKE '%term%'`: vera
+    sottostringa, quindi `*tratt` e `tratt` trovano `contratto` (~0,3 s);
+  * **due o più termini** → `CONTAINS(System.FileName, '"steril*" AND "2022*"')`:
+    prefissi di parola, tutti obbligatori ma **in qualunque ordine** (~0,1 s).
+    Il motivo: `LIKE '%steril%2022%'` costa **12 s** perché non usa l'indice,
+    mentre `CONTAINS` sì. Quindi con più termini la ricerca a metà parola non è
+    possibile lì (ma lo è nell'indice locale e nella scansione delle cartelle).
 
 ## Tasti
 

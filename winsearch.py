@@ -20,7 +20,7 @@ import threading
 from contextlib import suppress
 from urllib.parse import unquote
 
-from query import search_terms
+from query import like_pattern, search_terms
 from query import terms as query_terms
 
 _PROVIDER = "Provider=Search.CollatorDSO;Extended Properties='Application=Windows';"
@@ -45,6 +45,12 @@ def contains_condition(prop: str, terms: list[str]) -> str:
 
 def freetext_condition(text: str) -> str:
     return f"FREETEXT(System.Search.Contents, '{text}')"
+
+
+def contains_like(prop: str, query: str) -> str:
+    """`prop LIKE '%testo%'` (Windows Search non supporta ESCAPE)."""
+    pattern = like_pattern(query, escape=False).replace("'", "''")
+    return f"{prop} LIKE '{pattern}'"
 
 
 def path_from_url(url: str) -> str:
@@ -114,10 +120,16 @@ class WindowsSearch:
             self.last_info = info
             return [], info
 
-        strategies = [
-            ("nome", contains_condition("System.FileName", terms)),
-            ("percorso", contains_condition("System.ItemPathDisplay", terms)),
-        ]
+        strategies = []
+        if len(terms) == 1:
+            # un solo termine: LIKE con % ai lati = ricerca anche a meta' parola
+            # (`*tratt` trova "contratto"). Misurato ~0,3 s, accettabile.
+            strategies.append(("nome", contains_like("System.ItemNameDisplay", q)))
+        else:
+            # piu' termini: CONTAINS con prefissi di parola. Il LIKE multi-termine
+            # (`%a%b%`) costa 12+ secondi, quindi non si usa.
+            strategies.append(("nome", contains_condition("System.FileName", terms)))
+        strategies.append(("percorso", contains_condition("System.ItemPathDisplay", terms)))
         if content:
             strategies.append(("testo", freetext_condition(search_terms(q))))
 
