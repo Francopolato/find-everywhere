@@ -179,6 +179,25 @@ In alternativa al collegamento si può usare il registro
 `find-everywhere` = `"...\FindEverywhere.exe" --startup`) o Utilità di
 pianificazione con "All'accesso" + ritardo di 30 s, se vuoi che parta pi\u00f9 tardi.
 
+## Se l'antivirus blocca l'exe
+
+Gli eseguibili creati con PyInstaller (`--onefile`) sono non firmati e in ambito
+aziendale vengono spesso eliminati dal sistema di sicurezza. In quel caso **non
+serve l'exe**: l'app gira con il Python già installato.
+
+```text
+FindEverywhere.pyw              doppio clic: avvia l'app senza console
+run.bat                         idem, da riga di comando
+install-autostart-source.bat    avvio automatico al login SENZA exe
+```
+
+`install-autostart-source.bat` crea il collegamento in Esecuzione automatica
+puntando a `pythonw.exe "...\app.py" --startup` (nessun binario nuovo, nessuna
+modifica al registro; si annulla con `uninstall-autostart.bat`).
+
+L'exe/zip resta utile per le macchine dove è consentito, o se IT aggiunge
+un'eccezione (o se un giorno lo firmi con un certificato di code signing).
+
 ## Compilare
 
 Richiede PyInstaller (`pip install pyinstaller`) — qui è già presente.
