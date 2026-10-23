@@ -151,6 +151,34 @@ Note:
 
 `Win+R` → `shell:startup` → copia lì un collegamento a `SpotlightPy.exe`.
 
+## Avvio automatico
+
+```bat
+install-autostart.bat     :: copia l'exe in %LOCALAPPDATA%\find-everywhere e
+                          :: crea il collegamento in Esecuzione automatica
+uninstall-autostart.bat   :: rimuove il collegamento
+```
+
+Come funziona:
+
+* l'exe viene **copiato** in `%LOCALAPPDATA%\find-everywhere\FindEverywhere.exe`,
+  così ricompilare (`build.bat`, che svuota `dist\`) non rompe l'avvio automatico;
+* il collegamento creato punta a quell'exe con il parametro **`--startup`**;
+* con `--startup` l'app resta **nascosta** e si apre solo con la hotkey globale;
+  se per\u00f2 la hotkey \u00e8 disabilitata (campo vuoto) la finestra viene mostrata,
+  altrimenti non avresti modo di aprirla;
+* solo utente corrente, nessun permesso di amministratore, nessuna modifica al
+  registro: tutto reversibile con `uninstall-autostart.bat`.
+
+**Requisito**: la hotkey globale deve essere **attiva** (Impostazioni → Hotkey
+principale → clicca il campo e premi la combinazione → Salva). Con `Ctrl+Alt+Spazio`
+sei a posto: è il default e risulta libero su questo PC.
+
+In alternativa al collegamento si può usare il registro
+(`HKCU\Software\Microsoft\Windows\CurrentVersion\Run`, valore
+`find-everywhere` = `"...\FindEverywhere.exe" --startup`) o Utilità di
+pianificazione con "All'accesso" + ritardo di 30 s, se vuoi che parta pi\u00f9 tardi.
+
 ## Compilare
 
 Richiede PyInstaller (`pip install pyinstaller`) — qui è già presente.

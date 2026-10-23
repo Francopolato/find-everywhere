@@ -33,7 +33,7 @@ from indexer import FileIndex, IndexerThread, LiveScanner
 from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
-VERSION = "1.7"
+VERSION = "1.8"
 
 
 def log(msg: str) -> None:
@@ -1406,9 +1406,13 @@ def main():
     if show_event:
         app._start_show_watcher(show_event)
 
+    startup = "--startup" in sys.argv
     if smoke:
         app.show()
         root.after(1200, root.destroy)
+    elif startup and app._main_hotkey():
+        # avvio automatico all'accensione: resta nascosta, si apre con la hotkey
+        log("avvio automatico: finestra nascosta in attesa della hotkey")
     else:
         app.show()
 
