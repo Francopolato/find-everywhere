@@ -155,6 +155,20 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "C:\scripts\carica.ps1" {pat
 "%LOCALAPPDATA%\PowerToys\WinUI3Apps\PowerToys.Peek.UI.exe" {path}
 ```
 
+L'esempio con **PowerToys Peek** è il modello d'uso più interessante: invece di
+*aprire* il file, lo **mostra in anteprima** (PDF, Office, immagini, markdown,
+archivi, testo) senza avviare l'applicazione associata. Cercare l'ordine o il
+contratto, selezionarlo e premerne la hotkey diventa un modo rapido di
+controllare il risultato giusto prima di aprirlo — e funziona anche sulle
+cartelle. L'eseguibile di Peek accetta uno o più percorsi:
+
+* per-utente: `%LOCALAPPDATA%\PowerToys\WinUI3Apps\PowerToys.Peek.UI.exe`
+* machine-wide: `C:\Program Files\PowerToys\WinUI3Apps\PowerToys.Peek.UI.exe`
+
+La stessa ricetta vale per qualunque strumento con interfaccia a riga di comando
+che accetta un percorso (7-Zip, VS Code, ffmpeg, uno script PowerShell/Python
+che carica il file su un gestionale, ecc.).
+
 Per PowerShell: metti il percorso dello `.ps1` tra virgolette se contiene spazi,
 `-ExecutionPolicy Bypass` evita l'errore "esecuzione di script disabilitata"
 senza toccare le impostazioni di sistema, e **non** aggiungere virgolette a
