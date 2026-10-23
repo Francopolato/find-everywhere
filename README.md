@@ -70,7 +70,9 @@ selezionato viene passato come argomento:
 
 * se nel comando scrivi `{path}` (o `{file}`, o `%path%`) viene sostituito dal
   percorso tra virgolette;
-* se non lo scrivi, il percorso viene aggiunto in coda al comando.
+* se non lo scrivi, il percorso viene aggiunto in coda al comando;
+* le variabili d'ambiente (`%LOCALAPPDATA%`, `%USERPROFILE%`, `%ProgramFiles%`, …)
+  vengono espanse dall'app, non serve passare da `cmd`.
 
 Esempi:
 
@@ -79,6 +81,7 @@ python C:\scripts\carica.py {path}
 "C:\Program Files\7-Zip\7zFM.exe" {path}
 notepad {path}
 powershell -NoProfile -ExecutionPolicy Bypass -File "C:\scripts\carica.ps1" {path}
+"%LOCALAPPDATA%\PowerToys\WinUI3Apps\PowerToys.Peek.UI.exe" {path}
 ```
 
 Per PowerShell: metti il percorso dello `.ps1` tra virgolette se contiene spazi,

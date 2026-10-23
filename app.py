@@ -33,7 +33,7 @@ from indexer import FileIndex, IndexerThread, LiveScanner
 from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
-VERSION = "1.6"
+VERSION = "1.7"
 
 
 def log(msg: str) -> None:
@@ -101,20 +101,26 @@ def _shell_open(path: str) -> None:
 
 
 def launch(cmdline: str) -> None:
-    """Esegue la command line dell'utente esattamente come e' scritta.
+    """Esegue la command line dell'utente come l'ha scritta.
 
-    Si passa una *stringa* (non una lista) a Popen: in questo modo Windows la
-    riceve verbatim, senza il re-quoting che con `cmd.exe /c` faceva arrivare a
+    Si passa una *stringa* (non una lista) a Popen: cosi' Windows la riceve
+    verbatim, senza il re-quoting che con `cmd.exe /c` faceva arrivare a
     PowerShell `-File` un argomento che iniziava con un doppio apice
     (errore "Illegal characters in path").
 
+    Le variabili d'ambiente sono espanse qui (`%LOCALAPPDATA%`, `%USERPROFILE%`,
+    ...): senza shell il sistema non le espanderebbe.
+
     Se il primo token non e' un eseguibile (script .bat/.cmd o comando interno
-    di cmd) si riprova via cmd.exe /c.
+    di cmd) si riprova via cmd.exe. In quel caso serve `/s` + virgolette:
+    `cmd /s /c "..."` toglie solo il primo e l'ultimo apice e lascia intatto
+    il resto (altrimenti `cmd /c "C:\\a b\\x.exe" "arg"` si sfasciarebbe).
     """
+    line = os.path.expandvars(cmdline)
     try:
-        subprocess.Popen(cmdline, close_fds=True)  # noqa: S603 - comando utente
+        subprocess.Popen(line, close_fds=True)  # noqa: S603 - comando utente
     except OSError:
-        subprocess.Popen(f"cmd.exe /c {cmdline}", close_fds=True)  # noqa: S603
+        subprocess.Popen(f'cmd.exe /s /c "{line}"', close_fds=True)  # noqa: S603
 
 
 def _hwnd(root: tk.Misc) -> int:
@@ -792,6 +798,7 @@ class SpotlightApp:
             log(f"script {script.get('name')!r}: {cmdline}")
             launch(cmdline)
         except Exception as exc:  # noqa: BLE001 - qualunque errore va mostrato
+            log(f"errore script: {type(exc).__name__}: {exc}")
             self.set_status(f"Errore script: {exc}", "err")
 
     def _context_menu(self, event, idx):
