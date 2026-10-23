@@ -24,7 +24,7 @@ import time
 import tkinter as tk
 import traceback
 from contextlib import suppress
-from tkinter import filedialog, ttk
+from tkinter import filedialog, simpledialog, ttk
 from tkinter import font as tkfont
 
 from config import APP_NAME, DB_PATH, app_dir, load_config, save_config
@@ -35,7 +35,7 @@ from query import name_rank
 from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
-VERSION = "1.12"
+VERSION = "1.13"
 
 
 def log(msg: str) -> None:
@@ -1046,6 +1046,7 @@ class SettingsWindow(tk.Toplevel):
         self.cfg = {**app.cfg}
         self.cfg["paths"] = list(app.cfg.get("paths", []))
         self.cfg["scripts"] = [dict(s) for s in app.cfg.get("scripts", [])]
+        self.cfg["excludes"] = list(app.cfg.get("excludes", []))
         self.script_idx = -1
 
         self.title(f"SpotlightPy {VERSION} — Impostazioni")
@@ -1126,6 +1127,27 @@ class SettingsWindow(tk.Toplevel):
         self._check(box2, "Indicizza all'avvio (risultati istantanei)", self.var_index)
         self.var_live = tk.BooleanVar(value=bool(self.cfg.get("live_scan", True)))
         self._check(box2, "Scansiona le cartelle a ogni ricerca (rotellina)", self.var_live)
+
+        # ------- esclusioni -------
+        box5 = self._section("Esclusioni (cartelle ignorate dalla scansione)")
+        tk.Label(box5, text="Nomi di cartella, non percorsi (es. node_modules, .git, "
+                            "Temp). Confronto senza distinzione di maiuscole.",
+                 bg=C["bg2"], fg=C["dim"], font=self.f_small, anchor="w",
+                 justify="left").pack(fill="x", padx=10, pady=(2, 0))
+        exclwrap = tk.Frame(box5, bg=C["bg2"])
+        exclwrap.pack(fill="x", padx=8, pady=4)
+        self.lb_excl = tk.Listbox(exclwrap, height=4, bg=C["bg3"], fg=C["fg"],
+                                  selectbackground=C["accent"], bd=0,
+                                  highlightthickness=0, font=self.f_small,
+                                  activestyle="none")
+        self.lb_excl.pack(side="left", fill="both", expand=True)
+        self.lb_excl.bind("<Double-Button-1>", lambda e: self._edit_exclude())
+        ebtns = tk.Frame(exclwrap, bg=C["bg2"])
+        ebtns.pack(side="right", fill="y", padx=(6, 0))
+        self._button(ebtns, "Aggiungi", self._add_exclude).pack(fill="x", pady=1)
+        self._button(ebtns, "Modifica", self._edit_exclude).pack(fill="x", pady=1)
+        self._button(ebtns, "Rimuovi", self._del_exclude).pack(fill="x", pady=1)
+        self._refresh_excludes()
 
         # ------- windows search -------
         box3 = self._section("Indice di Windows Search")
@@ -1263,6 +1285,61 @@ class SettingsWindow(tk.Toplevel):
         self.app.start_indexer(clear_first=True)
         self.status.config(text="Indice azzerato: ricostruzione avviata", fg=C["accent"])
 
+    # ---------- esclusioni ----------
+    def _refresh_excludes(self):
+        self.lb_excl.delete(0, "end")
+        for e in self.cfg["excludes"]:
+            self.lb_excl.insert("end", e)
+
+    def _set_exclude(self, value: str, index: int | None = None) -> bool:
+        """Aggiunge (index=None) o modifica una voce di esclusione."""
+        val = (value or "").strip().strip("\\/")
+        if not val:
+            return False
+        others = [e for i, e in enumerate(self.cfg["excludes"]) if i != index]
+        if any(o.lower() == val.lower() for o in others):
+            self.status.config(text=f"'{val}' e' gia' presente", fg=C["warn"])
+            return False
+        if index is None or index >= len(self.cfg["excludes"]):
+            self.cfg["excludes"].append(val)
+            index = len(self.cfg["excludes"]) - 1
+        else:
+            self.cfg["excludes"][index] = val
+        self._refresh_excludes()
+        self.lb_excl.selection_clear(0, "end")
+        self.lb_excl.selection_set(index)
+        self.status.config(text="Esclusioni modificate (ricorda di premere Salva)",
+                           fg=C["accent"])
+        return True
+
+    def _add_exclude(self):
+        val = simpledialog.askstring(
+            "Esclusione", "Nome della cartella da ignorare\n(es. node_modules):",
+            parent=self)
+        self._set_exclude(val or "")
+
+    def _edit_exclude(self):
+        sel = self.lb_excl.curselection()
+        if not sel:
+            self.status.config(text="Seleziona prima una voce dall'elenco", fg=C["warn"])
+            return
+        i = sel[0]
+        val = simpledialog.askstring(
+            "Esclusione", "Modifica il nome della cartella:",
+            initialvalue=self.cfg["excludes"][i], parent=self)
+        if val:
+            self._set_exclude(val, index=i)
+
+    def _del_exclude(self):
+        sel = self.lb_excl.curselection()
+        if not sel:
+            self.status.config(text="Seleziona prima una voce dall'elenco", fg=C["warn"])
+            return
+        self.cfg["excludes"].pop(sel[0])
+        self._refresh_excludes()
+        self.status.config(text="Esclusione rimossa (ricorda di premere Salva)",
+                           fg=C["accent"])
+
     # ---------- script ----------
     def _refresh_scripts(self):
         self.lb_scripts.delete(0, "end")
@@ -1363,6 +1440,7 @@ class SettingsWindow(tk.Toplevel):
             self._save_script()
 
         old_paths = list(self.app.cfg.get("paths", []))
+        old_excludes = list(self.app.cfg.get("excludes", []))
         new = dict(self.app.cfg)
         new["hotkey"] = hk
         new["paths"] = list(self.cfg["paths"])
@@ -1371,6 +1449,7 @@ class SettingsWindow(tk.Toplevel):
         new["index_on_startup"] = bool(self.var_index.get())
         new["live_scan"] = bool(self.var_live.get())
         new["win_search"] = bool(self.var_win.get())
+        new["excludes"] = [e for e in self.cfg["excludes"] if e]
         save_config(new)
         self.app.cfg = load_config()
 
@@ -1378,7 +1457,8 @@ class SettingsWindow(tk.Toplevel):
         self.destroy()
         self.on_close()
         self.app._apply_hotkeys()
-        if new["paths"] != old_paths and new["index_on_startup"]:
+        if (new["paths"] != old_paths or new["excludes"] != old_excludes) \
+                and new["index_on_startup"]:
             self.app.start_indexer()
         self.app.show()
 

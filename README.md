@@ -228,7 +228,11 @@ Note:
 * Diagnostica: `%APPDATA%\SpotlightPy\spotlightpy.log` (avvii, hotkey
   registrate, errori non gestiti). Se qualcosa non va, quel file dice perché.
 * `node_modules`, `__pycache__`, `.git`, `.venv` sono esclusi di default per
-  velocità: togli la voce da `excludes` se ti servono.
+  velocità: l'elenco si gestisce dalla GUI (Impostazioni → **Esclusioni**:
+  Aggiungi / Modifica / Rimuovi, doppio clic per modificare una voce). Sono
+  **nomi di cartella**, non percorsi, confrontati senza distinzione di
+  maiuscole; dopo il salvataggio parte l'indicizzazione, così le nuove
+esclusioni valgono anche per l'indice già esistente.
 * L'indice cresce: per un indice pulito usa **Ricostruisci indice** nelle
   impostazioni.
 
