@@ -30,10 +30,12 @@ from tkinter import font as tkfont
 from config import APP_NAME, DB_PATH, app_dir, load_config, save_config
 from hotkeys import HotkeyManager, normalize_hotkey
 from indexer import FileIndex, IndexerThread, LiveScanner
+from query import is_empty as query_is_empty
+from query import name_rank
 from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
-VERSION = "1.9"
+VERSION = "1.10"
 
 
 def log(msg: str) -> None:
@@ -224,6 +226,7 @@ class SpotlightApp:
         self.scan_id = 0
         self.busy_scan = False
         self.busy_index = False
+        self.busy_win = False
         self.status_text = ""
         self.status_kind = "dim"
         self._spin = 0
@@ -548,7 +551,7 @@ class SpotlightApp:
         self.results = []
         self.seen = set()
 
-        if not q:
+        if query_is_empty(q):
             self.busy_scan = False
             self.set_status("")
             self._render()
@@ -558,8 +561,10 @@ class SpotlightApp:
         self._merge(self.db.search(q, limit=self.cfg.get("max_results", 120)), "index")
         self._render()
 
-        # 2) indice di Windows (thread separato, ~150-400ms)
+        # 2) indice di Windows (thread separato; con i jolly puo' richiedere
+        #    qualche secondo, quindi mostriamo la rotellina)
         if self.cfg.get("win_search") and len(q) >= 2:
+            self.busy_win = True
             threading.Thread(target=self._win_bg, args=(q,), daemon=True).start()
 
         # 3) scansione "viva" delle cartelle non indicizzate
@@ -615,16 +620,8 @@ class SpotlightApp:
         q = self.query_now.lower()
 
         def score(it):
-            n = (it.get("name") or "").lower()
-            if n == q:
-                s = 0
-            elif n.startswith(q):
-                s = 1
-            elif q in n:
-                s = 2
-            else:
-                s = 3
-            return (s, len(n), it["path"].lower())
+            n = it.get("name") or ""
+            return (name_rank(n, q), len(n), it["path"].lower())
 
         self.results.sort(key=score)
         maxr = self.cfg.get("max_results", 120)
@@ -705,7 +702,8 @@ class SpotlightApp:
 
         if not self.view:
             if not self.query_now:
-                msg = "Scrivi per cercare…"
+                msg = ("Scrivi per cercare…   "
+                       "(* = uno o più caratteri, es. scafall*metall*ord*23440)")
             elif self.results:
                 msg = (f"Nessun risultato con il filtro «{self._filter_text()}» "
                        f"({len(self.results)} trovati)")
@@ -920,7 +918,7 @@ class SpotlightApp:
                                fg=C.get(kind, C["dim"]))
 
     def _tick(self):
-        busy = self.busy_scan or self.busy_index
+        busy = self.busy_scan or self.busy_index or self.busy_win
         if busy:
             self._spin = (self._spin + 1) % len(SPINNER)
             self.spin_lbl.config(text=SPINNER[self._spin])
@@ -969,6 +967,7 @@ class SpotlightApp:
             q, items, info = ev[1], ev[2], ev[3]
             if q != self.query_now:
                 return
+            self.busy_win = False
             self.win_info = info
             log(f"ricerca {q!r}: windows={len(items)} "
                 f"[{' '.join(info.get('strategies') or [])}] "

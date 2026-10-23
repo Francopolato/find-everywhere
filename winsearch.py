@@ -1,14 +1,16 @@
 """Ricerca nell'indice di Windows (Windows Search / SYSTEMINDEX) via OLEDB.
 
-Tre strategie in cascata, come fa PowerToys:
-  1. nome visualizzato   System.ItemNameDisplay LIKE '%q%'
-  2. nome file           System.FileName LIKE '%q%'
-  3. contenuto           FREETEXT(System.Search.Contents, 'q')
+Strategie (tutte basate sull'indice full-text, quindi veloci):
+  1. `nome`     CONTAINS(System.FileName, '"term1*" AND "term2*" ...')
+  2. `percorso` CONTAINS(System.ItemPathDisplay, ...)  -> la cartella che contiene i termini
+  3. `testo`    FREETEXT(System.Search.Contents, ...)  -> contenuto dei documenti
 
-La 3 parte solo se le prime due non bastano, cosi' il caso normale resta
-rapido (~0,3 s) e la ricerca nel testo dei documenti e' comunque disponibile.
-
-Usa pywin32 (win32com) e degrada senza far danni se non e' disponibile.
+Note importanti:
+* ogni termine e' cercato come **prefisso di parola** (`term*`), che e' cio'
+  che l'indice sa fare in fretta; la ricerca di sottostringa con
+  `LIKE '%term%'` costava 12+ secondi per query, quindi non si usa piu';
+* i `*` digitati dell'utente hanno lo stesso effetto (separano i termini);
+* i termini possono comparire in qualunque ordine.
 """
 
 from __future__ import annotations
@@ -18,27 +20,31 @@ import threading
 from contextlib import suppress
 from urllib.parse import unquote
 
+from query import search_terms
+from query import terms as query_terms
+
 _PROVIDER = "Provider=Search.CollatorDSO;Extended Properties='Application=Windows';"
 
-# Windows Search non supporta query parametrizzate su SYSTEMINDEX: la
-# condizione viene costruita qui, con l'apostrofo raddoppiato (escape SQL).
 _SQL_TEMPLATE = (
     "SELECT TOP @@LIMIT@@ System.ItemNameDisplay, System.ItemPathDisplay, "
     "System.ItemUrl FROM SYSTEMINDEX WHERE @@WHERE@@"
-)
-
-# (etichetta, condizione SQL; @@V@@ = valore gia' quotato correttamente)
-_STRATEGIES = (
-    ("nome", "System.ItemNameDisplay LIKE '@@V@@'"),
-    ("file", "System.FileName LIKE '@@V@@'"),
-    ("percorso", "System.ItemPathDisplay LIKE '@@V@@'"),
-    ("testo", "FREETEXT(System.Search.Contents, '@@V@@')"),
 )
 
 
 def build_sql(limit: int, condition: str) -> str:
     sql = _SQL_TEMPLATE.replace("@@LIMIT@@", str(int(limit)))
     return sql.replace("@@WHERE@@", condition)
+
+
+def contains_condition(prop: str, terms: list[str]) -> str:
+    """`CONTAINS(prop, '"a*" AND "b*"')` — prefissi di parola, tutti obbligatori."""
+    safe_terms = [t.replace("'", "''").replace('"', "") for t in terms]
+    expr = " AND ".join(f'"{t}*"' for t in safe_terms)
+    return f"CONTAINS({prop}, '{expr}')"
+
+
+def freetext_condition(text: str) -> str:
+    return f"FREETEXT(System.Search.Contents, '{text}')"
 
 
 def path_from_url(url: str) -> str:
@@ -103,14 +109,17 @@ class WindowsSearch:
         """Ritorna (risultati, info). info raccoglie diagnosi per la UI/log."""
         q = (query or "").strip()
         info: dict = {"strategies": [], "error": None, "count": 0}
-        if not q:
+        terms = query_terms(q)
+        if not terms:
             self.last_info = info
             return [], info
-        safe = q.replace("'", "''")
 
-        strategies = list(_STRATEGIES)
-        if not content:
-            strategies = [s for s in strategies if s[0] != "testo"]
+        strategies = [
+            ("nome", contains_condition("System.FileName", terms)),
+            ("percorso", contains_condition("System.ItemPathDisplay", terms)),
+        ]
+        if content:
+            strategies.append(("testo", freetext_condition(search_terms(q))))
 
         items: list[dict] = []
         seen: set[str] = set()
@@ -119,12 +128,10 @@ class WindowsSearch:
         try:
             with self._lock:
                 conn = self._connect()
-                for label, cond in strategies:
+                for label, where in strategies:
                     if label != "nome" and len(items) >= want:
                         break
-                    value = safe if label == "testo" else f"%{safe}%"
-                    sql = build_sql(limit, cond.replace("@@V@@", value))
-                    rows = self._rows(conn, sql)
+                    rows = self._rows(conn, build_sql(limit, where))
                     info["strategies"].append(f"{label}:{len(rows)}")
                     for name, shown_path, url in rows:
                         if not self._keep(name, shown_path or url):
@@ -136,8 +143,7 @@ class WindowsSearch:
                             continue
                         seen.add(low)
                         # Windows Search non dice se l'elemento e' una cartella:
-                        # lo verifica direttamente sul filesystem (i percorsi
-                        # dell'indice sono locali e verificati).
+                        # lo verifica direttamente sul filesystem.
                         items.append({
                             "path": path,
                             "name": str(name),

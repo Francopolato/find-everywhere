@@ -46,6 +46,31 @@ I percorsi dei risultati di Windows Search vengono ricavati da `System.ItemUrl`:
 (`C:\Utenti\Polat\Documenti\…`) che su disco non esiste, e faceva aprire a
 Explorer una cartella sbagliata.
 
+## Ricerca intelligente (jolly `*`)
+
+`*` significa **uno o più caratteri qualsiasi**:
+
+```text
+scafallatur*metall*ord*23440
+```
+
+trova i nomi che contengono `scafallatur`, poi `metall`, poi `ord`, poi `23440`.
+Un `*` in testa o in coda vale "qualsiasi cosa" (`*2024`, `contratto*`).
+Senza `*` la ricerca resta quella di sempre.
+
+Come viene applicato:
+
+* **indice locale (SQLite)** e **scansione cartelle**: conversione in `LIKE`
+  (`*` → `_%`, cioè almeno un carattere) oppure in regex, quindi sottostringa
+  vera;
+* **Windows Search**: ogni termine diventa un **prefisso di parola**
+  (`CONTAINS(System.FileName, '"scafallatur*" AND "metall*" …')`), tutti i
+  termini devono comparire ma **in qualunque ordine**. È il motivo per cui la
+  ricerca è veloce (0,1 s): `LIKE '%term%'` costava 12+ secondi perché non usa
+  l'indice. Conseguenza: una ricerca a metà parola (es. `tratt` dentro
+  `contratto`) non trova nulla in Windows Search, mentre la trova la scansione
+  delle cartelle configurate.
+
 ## Tasti
 
 | tasto | azione |

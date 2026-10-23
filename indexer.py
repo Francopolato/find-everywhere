@@ -11,6 +11,9 @@ import sqlite3
 import threading
 import time
 
+from query import is_empty, like_pattern
+from query import regex as query_regex
+
 DEFAULT_EXCLUDES = [
     "$RECYCLE.BIN",
     "System Volume Information",
@@ -76,10 +79,10 @@ class FileIndex:
     # ---------------- query ----------------
     def search(self, query: str, limit: int = 60) -> list[dict]:
         q = (query or "").strip().lower()
-        if not q:
+        if is_empty(q):
             return []
         conn = self.conn()
-        like = "%" + _like_escape(q) + "%"
+        like = like_pattern(q)
         rows = conn.execute(
             "SELECT path, name, dir, is_dir FROM files WHERE name_lower LIKE ? ESCAPE '\\' "
             "ORDER BY LENGTH(name) ASC LIMIT ?",
@@ -230,6 +233,7 @@ class LiveScanner(threading.Thread):
         self.excludes = excludes
         self.query = query
         self.ql = query.lower()
+        self.rx = query_regex(query)
         self.events = events
         self.scan_id = scan_id
         self.limit = limit
@@ -251,7 +255,8 @@ class LiveScanner(threading.Thread):
                     self.db.upsert(batch)
                     indexed += len(batch)
                     for row in batch:
-                        if self.ql in row[2] and found < self.limit:
+                        if (self.rx is not None and found < self.limit
+                                and self.rx.search(row[2])):
                             hits.append({"path": row[0], "name": row[1],
                                          "dir": row[3], "is_dir": bool(row[7])})
                             found += 1
