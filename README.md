@@ -1,13 +1,46 @@
-# SpotlightPy
+# find-everywhere (SpotlightPy)
 
 Launcher stile *Spotlight / PowerToys Run* per Windows, in Python (solo stdlib
 + pywin32 per l'indice di Windows). Nasce per cercare file che stanno in
 **cartelle di rete non indicizzabili** da Windows Search.
 
-```
+```text
 Ctrl+Alt+Spazio  ->  apre la finestra (chiudi con Esc). Configurabile o disabilitabile:
                     impostazioni -> hotkey principale -> "Nessuna" (campo vuoto).
 ```
+
+## Installazione
+
+Due modi, il risultato è lo stesso. Requisiti: Windows 10/11.
+
+**A) Pacchetto della release** (consigliato): scarica `find-everywhere-vX.Y.zip`
+da [Releases](https://github.com/Francopolato/find-everywhere/releases),
+estrailo dove vuoi e avvia:
+
+```text
+FindEverywhere.exe      eseguibile unico, nessun Python richiesto
+FindEverywhere.pyw      alternativa senza exe (usa il Python installato)
+```
+
+**B) Da sorgente (git clone)**:
+
+```bat
+git clone https://github.com/Francopolato/find-everywhere.git
+cd find-everywhere
+pip install -r requirements.txt      :: pywin32, per l'indice di Windows
+run.bat                              :: oppure: python app.py
+```
+
+`pip install` serve solo per la ricerca nell'indice di Windows: senza
+`pywin32` l'app parte lo stesso e usa indice locale + scansione delle cartelle.
+
+Al primo avvio: ingranaggio ⚙ (o `Ctrl+,`) → **Aggiungi…** la cartella (anche
+`\\server\share`) → *Salva*. Parte l'indicizzazione; la prima ricerca su uno
+share di rete può richiedere qualche secondo, poi è istantanea.
+
+Dati e log (in entrambi i modi): `%APPDATA%\SpotlightPy\\` → `config.json`,
+`index.db`, `spotlightpy.log`. Per l'avvio automatico al login vedi
+al *Avvio automatico*; per compilare l'exe vedi *Compilare*.
 
 ## Come funziona la ricerca
 
@@ -16,7 +49,7 @@ Ogni ricerca unisce tre fonti, in ordine di velocità:
 | fonte | cosa fa | quando arriva |
 |---|---|---|
 | **Indice locale (SQLite)** | risultati già scansionati in precedenza | immediato (istantaneo) |
-| **Windows Search** (SYSTEMINDEX) | file **e cartelle** indicizzati da Windows; 4 strategie in cascata: nome, nome file, percorso contenitore, contenuto dei documenti | ~0,2–0,4 s (thread separato) |
+| **Windows Search** (SYSTEMINDEX) | file **e cartelle** indicizzati da Windows: con un termine ricerca a metà parola, con più termini prefissi di parola, più il percorso contenitore e il contenuto dei documenti | ~0,1–0,4 s (thread separato) |
 | **Scansione viva** | `os.scandir` ricorsivo sulle cartelle configurate (es. share di rete) | in streaming, con la rotellina |
 
 Quindi: la finestra mostra subito quello che sa, poi si riempie man mano che
@@ -96,7 +129,7 @@ con il campo vuoto **non viene registrata nessuna hotkey globale** e la finestra
 si apre solo dal bat/exe (doppio clic). `Ctrl+Shift+E` è riservato all'azione
 "apri la cartella contenitrice" e non è accettato come hotkey globale.
 
-I risultati includono **sia file sia cartelle** (icona 🗂 per le cartelle).
+I risultati includono **sia file sia cartelle** (icona 📁 per le cartelle).
 
 Click destro su un risultato: Apri / Apri cartella / Copia percorso / script.
 
@@ -185,10 +218,6 @@ Note:
 * L'indice cresce: per un indice pulito usa **Ricostruisci indice** nelle
   impostazioni.
 
-## Avvio automatico
-
-`Win+R` → `shell:startup` → copia lì un collegamento a `SpotlightPy.exe`.
-
 ## Avvio automatico (un solo bat, universale)
 
 ```bat
@@ -227,7 +256,7 @@ all'avvio la finestra viene mostrata (per non lasciarti senza modo di aprirla).
 In alternativa al collegamento si può usare il registro
 (`HKCU\Software\Microsoft\Windows\CurrentVersion\Run`, valore
 `find-everywhere` = `"...\FindEverywhere.exe" --startup`) o Utilità di
-pianificazione con "All'accesso" + ritardo di 30 s, se vuoi che parta pi\u00f9 tardi.
+pianificazione con "All'accesso" + ritardo di 30 s, se vuoi che parta più tardi.
 
 ## Se l'antivirus blocca l'exe
 
