@@ -33,7 +33,7 @@ from indexer import FileIndex, IndexerThread, LiveScanner
 from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
-VERSION = "1.8"
+VERSION = "1.9"
 
 
 def log(msg: str) -> None:
@@ -233,6 +233,10 @@ class SpotlightApp:
         self._quitting = False
         self._tick_count = 0
         self.win_info: dict = {}
+        self.filter = self.cfg.get("filter", "all")
+        if self.filter not in ("all", "files", "dirs"):
+            self.filter = "all"
+        self.view: list[dict] = []
 
         self.scale = _dpi_scale()
         self._build_ui()
@@ -315,6 +319,14 @@ class SpotlightApp:
         self.gear.pack(side="right", padx=(0, 12))
         self.gear.bind("<Button-1>", lambda e: self.open_settings())
 
+        # filtro: Tutti / Solo file / Solo cartelle (click o Ctrl+T)
+        self.filter_lbl = tk.Label(top, text=self._filter_text(), bg=C["bg2"],
+                                   fg=C["dim"], font=self.font_small,
+                                   cursor="hand2")
+        self.filter_lbl.pack(side="right", padx=(0, 10))
+        self.filter_lbl.bind("<Button-1>", lambda e: self._cycle_filter())
+        self.entry.bind("<Control-t>", self._on_toggle_filter)
+
         # ---- riga di stato ----
         self.status_frame = tk.Frame(outer, bg=C["bg"])
         self.status_frame.pack(fill="x")
@@ -373,7 +385,8 @@ class SpotlightApp:
 
     def _update_hints(self):
         parts = ["Invio / click: apri", "Ctrl+Shift+E: cartella contenitrice",
-                 "↑↓: naviga", "Esc: chiudi", "Ctrl+,: impostazioni"]
+                 "↑↓: naviga", "Ctrl+T: filtro", "Esc: chiudi",
+                 "Ctrl+,: impostazioni"]
         for s in self.cfg.get("scripts", []):
             if s.get("hotkey"):
                 parts.append(f"{s['hotkey'].upper()}: {s.get('name') or 'script'}")
@@ -622,23 +635,89 @@ class SpotlightApp:
                 self.seen.discard(it["path"].lower())
         if self.sel >= len(self.results):
             self.sel = max(0, len(self.results) - 1)
+        self._apply_filter()
 
     # ------------------------------------------------------- rendering
+    # ------------------------------------------------------- filtro risultati
+    FILTERS = ("all", "files", "dirs")
+    FILTER_LABEL = {"all": "Tutti", "files": "Solo file", "dirs": "Solo cartelle"}
+
+    def _filter_text(self) -> str:
+        return self.FILTER_LABEL.get(self.filter, "Tutti")
+
+    def _on_toggle_filter(self, _event=None):
+        self._cycle_filter()
+        return "break"
+
+    def _cycle_filter(self):
+        try:
+            i = self.FILTERS.index(self.filter)
+        except ValueError:
+            i = 0
+        self.filter = self.FILTERS[(i + 1) % len(self.FILTERS)]
+        self.cfg["filter"] = self.filter
+        with suppress(Exception):
+            save_config(self.cfg)
+        with suppress(Exception):
+            self.filter_lbl.config(text=self._filter_text())
+        self._apply_filter()
+        self.sel = 0
+        self.offset = 0
+        self._render()
+        self.set_status(f"Filtro: {self._filter_text()} "
+                        f"({len(self.view)} di {len(self.results)})", "accent")
+
+    def _apply_filter(self):
+        if self.filter == "files":
+            self.view = [r for r in self.results if not r.get("is_dir")]
+        elif self.filter == "dirs":
+            self.view = [r for r in self.results if r.get("is_dir")]
+        else:
+            self.view = list(self.results)
+        if self.sel >= len(self.view):
+            self.sel = max(0, len(self.view) - 1)
+
+    # ------------------------------------------------------- rendering
+    def _fit_name(self, item) -> str:
+        """Nome da mostrare: estensione sempre visibile, troncamento con …
+        in mezzo se troppo lungo (es. "contratto molto lungo …2024.pdf")."""
+        name = str(item.get("name") or "")
+        is_dir = bool(item.get("is_dir"))
+        if not is_dir:
+            ext = os.path.splitext(str(item.get("path") or ""))[1]
+            if ext and not name.lower().endswith(ext.lower()):
+                name += ext
+        limit = 52
+        if len(name) <= limit:
+            return name
+        if is_dir:
+            return name[: limit - 1] + "…"
+        root, ext = os.path.splitext(name)
+        keep = limit - len(ext) - 1
+        if keep < 8:
+            return name[: limit - 1] + "…"
+        return root[:keep] + "…" + ext
+
     def _render(self):
         for w in self.rows_frame.winfo_children():
             w.destroy()
         self.row_widgets = []
 
-        if not self.results:
-            msg = ("Scrivi per cercare…" if not self.query_now
-                   else "Nessun risultato")
+        if not self.view:
+            if not self.query_now:
+                msg = "Scrivi per cercare…"
+            elif self.results:
+                msg = (f"Nessun risultato con il filtro «{self._filter_text()}» "
+                       f"({len(self.results)} trovati)")
+            else:
+                msg = "Nessun risultato"
             tk.Label(self.rows_frame, text=msg, bg=C["bg"], fg=C["dim"],
                      font=self.font_row).pack(pady=24)
             return
 
-        total = len(self.results)
+        total = len(self.view)
         self.offset = max(0, min(self.offset, max(0, total - MAX_ROWS)))
-        visible = self.results[self.offset:self.offset + MAX_ROWS]
+        visible = self.view[self.offset:self.offset + MAX_ROWS]
 
         for i, item in enumerate(visible):
             abs_idx = self.offset + i
@@ -647,7 +726,7 @@ class SpotlightApp:
 
             source = str(item.get("source") or "index")
             if item.get("is_dir"):
-                icon = "🗂"
+                icon = "📁"
             elif item.get("match") == "testo":
                 icon = "📃"
             else:
@@ -656,7 +735,7 @@ class SpotlightApp:
                              font=self.font_icon, width=2)
             lbl_i.pack(side="left")
 
-            lbl_n = tk.Label(f, text=item["name"], bg=C["bg"], fg=C["fg"],
+            lbl_n = tk.Label(f, text=self._fit_name(item), bg=C["bg"], fg=C["fg"],
                              font=self.font_row_b, anchor="w")
             lbl_n.pack(side="left")
 
@@ -692,9 +771,9 @@ class SpotlightApp:
             self._select(idx, scroll=False)
 
     def _select(self, idx, scroll=True):
-        if not self.results:
+        if not self.view:
             return
-        idx = max(0, min(idx, len(self.results) - 1))
+        idx = max(0, min(idx, len(self.view) - 1))
         self.sel = idx
         if scroll:
             if idx < self.offset:
@@ -708,18 +787,18 @@ class SpotlightApp:
         self._paint_selection()
 
     def _move(self, delta):
-        if not self.results:
+        if not self.view:
             return "break"
         self._select(self.sel + delta)
         return "break"
 
     def _on_wheel(self, event):
-        if not self.results:
+        if not self.view:
             return
         up = getattr(event, "delta", 0) > 0 or getattr(event, "num", 0) == 4
         step = -1 if up else 1
         new_off = max(0, min(self.offset + step * 2,
-                             max(0, len(self.results) - MAX_ROWS)))
+                             max(0, len(self.view) - MAX_ROWS)))
         if new_off != self.offset:
             self.offset = new_off
             self._render()
@@ -729,8 +808,8 @@ class SpotlightApp:
         self._activate(reveal=False)
 
     def _selected_item(self):
-        if 0 <= self.sel < len(self.results):
-            return self.results[self.sel]
+        if 0 <= self.sel < len(self.view):
+            return self.view[self.sel]
         return None
 
     def _selected_path(self):
@@ -1410,9 +1489,10 @@ def main():
     if smoke:
         app.show()
         root.after(1200, root.destroy)
-    elif startup and app._main_hotkey():
-        # avvio automatico all'accensione: resta nascosta, si apre con la hotkey
-        log("avvio automatico: finestra nascosta in attesa della hotkey")
+    elif startup:
+        # avvio automatico all'accensione: la finestra NON si apre mai da sola.
+        # Si apre con la hotkey globale oppure rilanciando l'app (doppio clic).
+        log("avvio automatico: finestra nascosta (hotkey o doppio clic per aprirla)")
     else:
         app.show()
 

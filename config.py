@@ -50,6 +50,8 @@ DEFAULT_CONFIG = {
     "live_scan": True,           # scansione "a vista" a ogni ricerca (rotellina)
     "max_results": 120,
     "hide_on_focus_loss": True,
+    # filtro risultati: "all" | "files" | "dirs" (ciclo con Ctrl+T o click)
+    "filter": "all",
 }
 
 

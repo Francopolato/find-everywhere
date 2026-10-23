@@ -13,6 +13,7 @@ Usa pywin32 (win32com) e degrada senza far danni se non e' disponibile.
 
 from __future__ import annotations
 
+import os
 import threading
 from contextlib import suppress
 from urllib.parse import unquote
@@ -30,6 +31,7 @@ _SQL_TEMPLATE = (
 _STRATEGIES = (
     ("nome", "System.ItemNameDisplay LIKE '@@V@@'"),
     ("file", "System.FileName LIKE '@@V@@'"),
+    ("percorso", "System.ItemPathDisplay LIKE '@@V@@'"),
     ("testo", "FREETEXT(System.Search.Contents, '@@V@@')"),
 )
 
@@ -133,12 +135,16 @@ class WindowsSearch:
                         if not path or low in seen:
                             continue
                         seen.add(low)
+                        # Windows Search non dice se l'elemento e' una cartella:
+                        # lo verifica direttamente sul filesystem (i percorsi
+                        # dell'indice sono locali e verificati).
                         items.append({
                             "path": path,
                             "name": str(name),
                             "dir": path.rsplit("\\", 1)[0],
                             "source": "pc",
                             "match": label,
+                            "is_dir": os.path.isdir(path),
                         })
                         if len(items) >= limit:
                             break

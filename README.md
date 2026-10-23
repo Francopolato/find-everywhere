@@ -16,7 +16,7 @@ Ogni ricerca unisce tre fonti, in ordine di velocità:
 | fonte | cosa fa | quando arriva |
 |---|---|---|
 | **Indice locale (SQLite)** | risultati già scansionati in precedenza | immediato (istantaneo) |
-| **Windows Search** (SYSTEMINDEX) | file indicizzati da Windows su questo PC | ~0,2–0,4 s (thread separato) |
+| **Windows Search** (SYSTEMINDEX) | file **e cartelle** indicizzati da Windows; 4 strategie in cascata: nome, nome file, percorso contenitore, contenuto dei documenti | ~0,2–0,4 s (thread separato) |
 | **Scansione viva** | `os.scandir` ricorsivo sulle cartelle configurate (es. share di rete) | in streaming, con la rotellina |
 
 Quindi: la finestra mostra subito quello che sa, poi si riempie man mano che
@@ -26,9 +26,20 @@ e **scrive nell'indice** tutto quello che incontra → la seconda volta è
 istantanea.
 
 L'indice viene anche ricostruito all'avvio (dopo un walk completo le voci di
-file cancellati vengono rimosse). Icone nei risultati: 🗂 cartella, 🖥 indice di
-Windows, 📄 indice locale, 🌐 cartella scansionata a mano, 📃 corrispondenza
-trovata nel testo del documento.
+file cancellati vengono rimosse).
+
+## Risultati
+
+* **file e cartelle**: le cartelle hanno icona 📁 e nome in evidenza;
+* **estensione sempre visibile**: se il nome non la contiene viene aggiunta dal
+  percorso (`.pdf`, `.xlsx`, …);
+* **nomi lunghi**: troncati con `…` **prima dell'estensione**
+  (`contratto quadro molto lungo … 2….pdf`), così il tipo di file resta leggibile;
+* **filtro**: in alto a destra il pulsante `Tutti` / `Solo file` / `Solo cartelle`
+  (anche `Ctrl+T`); la scelta viene salvata nel config;
+* icone di origine: 🖥 indice di Windows, 📄 indice locale, 🌐 cartella
+  scansionata a mano, 📃 corrispondenza trovata nel testo del documento,
+  📁 cartella.
 
 I percorsi dei risultati di Windows Search vengono ricavati da `System.ItemUrl`:
 `System.ItemPathDisplay` restituisce il percorso **localizzato**
@@ -43,6 +54,7 @@ Explorer una cartella sbagliata.
 | `Ctrl+Shift+E` (solo a finestra aperta) | apre la **cartella che contiene** l'elemento, con l'elemento selezionato |
 | `Ctrl+Invio` | come sopra (alias) |
 | `↑` / `↓`, rotellina | naviga i risultati |
+| `Ctrl+T` (o click su `Tutti`) | filtro: Tutti → Solo file → Solo cartelle |
 | `Ctrl+,` o ⚙ | impostazioni |
 | `Esc` | chiude la finestra |
 | `Ctrl+Shift+Q` | **esce dal processo** (deregistra le hotkey) |
@@ -161,6 +173,10 @@ install-autostart.bat --dry-run      :: mostra cosa farebbe, senza scrivere null
 install-autostart-source.bat         :: scorciatoia = "install-autostart.bat source"
 uninstall-autostart.bat              :: rimuove il collegamento
 ```
+
+Con `--startup` la finestra **non si apre mai** da sola all'accensione: si apre
+con la hotkey globale oppure rilanciando l'app (doppio clic sul collegamento o
+sul `.exe`/`.pyw`), che chiede all'istanza già attiva di mostrarsi.
 
 Come sceglie:
 
