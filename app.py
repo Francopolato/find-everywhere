@@ -1368,6 +1368,16 @@ def main():
         "ECCEZIONE IN THREAD:\n" + "".join(
             traceback.format_exception(a.exc_type, a.exc_value, a.exc_traceback)))
     log(f"avvio (v{VERSION}, pid={os.getpid()}, smoke={smoke})")
+
+    # autocontrollo della sola ricerca nell'indice di Windows (utile anche
+    # dentro l'exe compilato, per verificare che pywin32 sia stato incluso)
+    if "--selftest-wsearch" in sys.argv:
+        from winsearch import WindowsSearch
+
+        items, info = WindowsSearch().search("contratto", 3)
+        log(f"selftest winsearch: {len(items)} risultati | {info}")
+        print(f"selftest winsearch: {len(items)} risultati | {info}")
+        return
     with suppress(Exception):
         ctypes.windll.shcore.SetProcessDpiAwareness(1)
 

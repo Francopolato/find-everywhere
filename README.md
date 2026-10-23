@@ -151,23 +151,35 @@ Note:
 ## Compilare
 
 Richiede PyInstaller (`pip install pyinstaller`) — qui è già presente.
-Doppio click su `build.bat`, oppure:
+
+Doppio click su `build.bat` → `dist\SpotlightPy.exe`.
+Per cambiare il nome dell'eseguibile basta passarlo come parametro:
+
+```bat
+build.bat                  :: dist\SpotlightPy.exe
+build.bat FindEverywhere    :: dist\FindEverywhere.exe
+```
+
+Equivalente a mano:
 
 ```bat
 python -m PyInstaller --noconfirm --clean --onefile --windowed ^
-  --name SpotlightPy ^
+  --name FindEverywhere ^
   --hidden-import win32com.client --hidden-import pythoncom ^
   --hidden-import pywintypes --hidden-import win32timezone ^
   --collect-submodules win32com ^
   app.py
 ```
 
-Risultato: `dist\SpotlightPy.exe` (single file, nessuna console).
+Risultato: un singolo `.exe` (~30 MB, nessuna console). `build/`, `dist/` e
+`*.spec` sono in `.gitignore`, quindi non finiscono nel repo.
 
 ## Eseguire dal sorgente
 
 ```bat
-python app.py          (con console, per debug)
-run.bat                (senza console)
-python app.py --smoke  (self-test: apre la UI per 1,2 s ed esce)
+python app.py                    (con console, per debug)
+run.bat                          (senza console)
+python app.py --smoke            (self-test: apre la UI per 1,2 s ed esce)
+python app.py --selftest-wsearch (verifica la ricerca nell'indice di Windows,
+                                  utile anche sull'exe compilato)
 ```

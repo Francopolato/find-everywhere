@@ -1,10 +1,15 @@
 @echo off
+rem Uso:  build.bat                 -> dist\SpotlightPy.exe
+rem       build.bat FindEverywhere -> dist\FindEverywhere.exe
 setlocal
 cd /d "%~dp0"
 
-echo === Build SpotlightPy.exe ===
+set "APPNAME=%~1"
+if "%APPNAME%"=="" set "APPNAME=SpotlightPy"
+
+echo === Build %APPNAME%.exe ===
 python -m PyInstaller --noconfirm --clean --onefile --windowed ^
-  --name SpotlightPy ^
+  --name "%APPNAME%" ^
   --hidden-import win32com.client ^
   --hidden-import pythoncom ^
   --hidden-import pywintypes ^
@@ -20,6 +25,6 @@ if errorlevel 1 (
 )
 
 echo.
-echo Fatto: dist\SpotlightPy.exe
+echo Fatto: dist\%APPNAME%.exe
 echo Copia il file dove vuoi (es. sul Desktop) e avvialo.
 pause
