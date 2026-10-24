@@ -145,7 +145,10 @@ Come viene applicato:
   vera;
 * **Windows Search**, in base a quanti termini ci sono:
   * **un solo termine** → `System.ItemNameDisplay LIKE '%term%'`: vera
-    sottostringa, quindi `*tratt` e `tratt` trovano `contratto` (~0,3 s);
+    sottostringa, quindi `*tratt` e `tratt` trovano `contratto` (~0,3 s). Per
+    non perdere risultati si chiedono più righe all'indice (5× il limite,
+    minimo 300): con frammenti corti (es. `*menti`) i match sono tanti e il
+    taglio a 40 nascondeva cartelle come `investimenti`;
   * **due o più termini** → `CONTAINS(System.FileName, '"steril*" AND "2022*"')`:
     prefissi di parola, tutti obbligatori ma **in qualunque ordine** (~0,1 s).
     Il motivo: `LIKE '%steril%2022%'` costa **12 s** perché non usa l'indice,
@@ -169,6 +172,12 @@ Come viene applicato:
 **Spostare la finestra**: trascina con il mouse da una zona "vuota" (barra del
 titolo implicita, riga di stato, footer, area sotto i risultati). La posizione
 viene salvata nel config e ripristinata al riavvio.
+
+**Più schermi**: la finestra si apre sullo **schermo attivo** (quello dove sta il
+cursore) e ricorda **una posizione distinta per ogni monitor**
+(`window_pos_by_monitor`); se la posizione salvata non è più valida (layout
+cambiato) viene ricentrata. L'area usata è quella di lavoro, quindi non finisce
+sotto la barra delle applicazioni.
 
 Note sull'hotkey principale: si sceglie liberamente nelle impostazioni
 (clicca il campo e premi la combinazione) oppure si disabilita con "Nessuna":
@@ -257,6 +266,8 @@ Chiavi principali del config:
 ```json
 {
   "hotkey": "ctrl+alt+space",
+  "window_pos": null,
+  "window_pos_by_monitor": {"\\\\.\\DISPLAY1": [120, 80]},
   "paths": ["\\\\server\\share\\cartella"],
   "scripts": [{"name": "Carica", "command": "python C:\\s\\carica.py {path}", "hotkey": "ctrl+shift+1"}],
   "excludes": ["$RECYCLE.BIN", "System Volume Information", ".git", "node_modules", "__pycache__", ".venv", "venv"],
