@@ -12,7 +12,7 @@ Ctrl+Alt+Spazio  ->  apre la finestra (chiudi con Esc). Configurabile o disabili
 ## Novità
 
 L'elenco completo delle modifiche è in **[CHANGELOG.md](CHANGELOG.md)**.
-In sintesi, dall'ultima release pubblicata (v1.14):
+In sintesi, le novità recenti (v1.15 → v1.26):
 
 * default: ricerca **solo per nome** (testo dei documenti e percorso disattivati);
 * **icone per tipo** (📁 / 📄 / `📁↗` per i collegamenti `.lnk`) e **colore per
@@ -21,10 +21,14 @@ In sintesi, dall'ultima release pubblicata (v1.14):
   cartella è già indicizzata, avviso se ne è esclusa;
 * filtri `Tutti / Solo file / Solo cartelle / Solo testo` (`Ctrl+T`);
 * la finestra si apre sullo **schermo attivo** e ricorda la posizione **per ogni
-  monitor**;
+  monitor**; le **Impostazioni** si aprono sullo stesso schermo;
 * **aggiornamenti** dalle impostazioni (`git pull` da sorgente, download del nuovo
   eseguibile se compilato);
-* ricerca a metà parola più completa (`*menti` trova `investimenti`).
+* ricerca a metà parola più completa (`*menti` trova `investimenti`);
+* **«Apri in Explorer»** al posto di «Apri cartella contenitrice»;
+* per **ogni script** l'opzione *«resta aperta in secondo piano»*;
+* riaprendo lo Spotlight tornano l'ultima ricerca **e l'ultimo elemento
+  selezionato**.
 
 ## Installazione
 
