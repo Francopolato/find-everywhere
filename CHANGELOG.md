@@ -4,6 +4,14 @@ Modifiche rilevanti a **find-everywhere**, dalla più recente. Le versioni
 corrispondono ai tag git (`vX.Y`); le note complete di ogni release sono nella
 pagina [Releases](https://github.com/Francopolato/find-everywhere/releases).
 
+## v1.24 — «resta in secondo piano» per singolo script
+
+- l'opzione non è più globale: **ogni script** ha la sua casella *«Lanciando
+  questo script la finestra resta aperta in secondo piano»*;
+- nell'elenco gli script con l'opzione attiva sono marcati con **`· dietro`**;
+- l'impostazione globale `script_keep_open` (durata una sola versione) è stata
+  rimossa: vale solo il flag `keep_open` del singolo script.
+
 ## v1.23 — script in secondo piano e selezione ricordata
 
 - nuovo toggle **«Lanciando uno script la finestra resta aperta in secondo

@@ -267,11 +267,14 @@ Nelle impostazioni: **Nuovo** aggiunge una riga `+ nuovo (da compilare)`
 nell'elenco, poi compili Nome / Comando / Hotkey e premi **Salva script**
 (infine **Salva** per scrivere il config).
 
-Con l'opzione **«Lanciando uno script la finestra resta aperta in secondo piano»**
-(Impostazioni, in alto) la finestra non si nasconde quando parte lo script: va
-dietro alle altre finestre e resta a portata di mano; senza l'opzione si chiude
-come sempre. Riaprendo lo Spotlight tornano sia l'ultima ricerca sia **l'ultimo
-elemento selezionato**.
+Ogni script ha la sua opzione **«Lanciando questo script la finestra resta aperta
+in secondo piano»** (casella nel form dello script): attiva, la finestra non si
+nasconde quando parte lo script, va dietro alle altre finestre e resta a portata
+di mano; spenta, si chiude come sempre. Nell'elenco gli script con l'opzione
+attiva sono marcati con **`· dietro`**.
+
+Riaprendo lo Spotlight tornano sia l'ultima ricerca sia **l'ultimo elemento
+selezionato**.
 
 Gli script configurati compaiono anche nel **menu del tasto destro** su un
 risultato, con il nome scelto e la hotkey accanto (`Apri con Peek  [CTRL+ALT+1]`);
@@ -292,7 +295,7 @@ Chiavi principali del config:
   "window_pos": null,
   "window_pos_by_monitor": {"\\\\.\\DISPLAY1": [120, 80]},
   "paths": ["\\\\server\\share\\cartella"],
-  "scripts": [{"name": "Carica", "command": "python C:\\s\\carica.py {path}", "hotkey": "ctrl+shift+1"}],
+  "scripts": [{"name": "Carica", "command": "python C:\\s\\carica.py {path}", "hotkey": "ctrl+shift+1", "keep_open": false}],
   "excludes": ["$RECYCLE.BIN", "System Volume Information", ".git", "node_modules", "__pycache__", ".venv", "venv"],
   "win_search": true,
   "win_search_limit": 40,
@@ -301,8 +304,7 @@ Chiavi principali del config:
   "index_on_startup": true,
   "live_scan": true,
   "max_results": 120,
-  "hide_on_focus_loss": true,
-  "script_keep_open": false
+  "hide_on_focus_loss": true
 }
 ```
 

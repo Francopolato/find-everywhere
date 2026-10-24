@@ -41,7 +41,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.23"
+VERSION = "1.24"
 
 
 def log(msg: str) -> None:
@@ -1078,8 +1078,8 @@ class SpotlightApp:
             cmdline = cmd.replace("%path%", path)
         else:
             cmdline = f"{cmd} {quoted}"
-        if self.cfg.get("script_keep_open"):
-            # toggle attivo: la finestra resta aperta, dietro le altre
+        if script.get("keep_open"):
+            # impostazione del singolo script: resta aperta, dietro le altre
             self.to_back()
         else:
             self.hide()
@@ -1344,11 +1344,6 @@ class SettingsWindow(tk.Toplevel):
         self.var_focus = tk.BooleanVar(value=bool(self.cfg.get("hide_on_focus_loss", True)))
         self._check(box1, "Nascondi quando la finestra perde il focus",
                     self.var_focus)
-        self.var_keep = tk.BooleanVar(
-            value=bool(self.cfg.get("script_keep_open", False)))
-        self._check(box1, "Lanciando uno script la finestra resta aperta in "
-                          "secondo piano", self.var_keep)
-
         # ------- cartelle personalizzate -------
         box2 = self._section("Cartelle personalizzate (anche di rete: \\\\server\\share)")
         listwrap = tk.Frame(box2, bg=C["bg2"])
@@ -1470,8 +1465,16 @@ class SettingsWindow(tk.Toplevel):
                  bg=C["bg2"], fg=C["dim"], font=self.f_small,
                  justify="left").grid(row=4, column=0, columnspan=2,
                                       sticky="w", pady=(4, 0))
+        self.var_keep_script = tk.BooleanVar(value=False)
+        tk.Checkbutton(form, text="Lanciando questo script la finestra resta aperta "
+                                  "in secondo piano", variable=self.var_keep_script,
+                       bg=C["bg2"], fg=C["fg"], selectcolor=C["bg3"],
+                       font=self.f_small, activebackground=C["bg2"],
+                       activeforeground=C["fg"], anchor="w", bd=0,
+                       highlightthickness=0).grid(row=5, column=0, columnspan=2,
+                                                  sticky="w", pady=(4, 0))
         self._button(form, "Salva script", self._save_script).grid(
-            row=5, column=1, sticky="e", pady=(6, 0))
+            row=6, column=1, sticky="e", pady=(6, 0))
         form.columnconfigure(1, weight=1)
 
         self._refresh_scripts()
@@ -1687,7 +1690,8 @@ class SettingsWindow(tk.Toplevel):
             hk = (s.get("hotkey") or "").upper()
             name = s.get("name") or ("+ nuovo (da compilare)"
                                      if not s.get("command") else "script")
-            self.lb_scripts.insert("end", f"{name}  [{hk}]")
+            mark = "  · dietro" if s.get("keep_open") else ""
+            self.lb_scripts.insert("end", f"{name}  [{hk}]{mark}")
 
     def _pick_script(self, _ev=None):
         sel = self.lb_scripts.curselection()
@@ -1700,6 +1704,7 @@ class SettingsWindow(tk.Toplevel):
         self.ent_cmd.delete(0, "end")
         self.ent_cmd.insert(0, s.get("command", ""))
         self.hk_script.set_hotkey(s.get("hotkey", ""))
+        self.var_keep_script.set(bool(s.get("keep_open")))
 
     def _new_script(self):
         log("impostazioni: premuto Nuovo script")
@@ -1712,6 +1717,8 @@ class SettingsWindow(tk.Toplevel):
         self.ent_name.delete(0, "end")
         self.ent_cmd.delete(0, "end")
         self.hk_script.set_hotkey("")
+        with suppress(Exception):
+            self.var_keep_script.set(False)
         with suppress(Exception):
             self.ent_name.focus_set()
         self.status.config(
@@ -1743,7 +1750,8 @@ class SettingsWindow(tk.Toplevel):
             with suppress(Exception):
                 self.ent_cmd.focus_set()
             return
-        entry = {"name": name or "script", "command": cmd, "hotkey": hk}
+        entry = {"name": name or "script", "command": cmd, "hotkey": hk,
+                 "keep_open": bool(self.var_keep_script.get())}
         if self.script_idx >= 0 and self.script_idx < len(self.cfg["scripts"]):
             self.cfg["scripts"][self.script_idx] = entry
         else:
@@ -1862,7 +1870,6 @@ class SettingsWindow(tk.Toplevel):
                 kind = "net" if indexscope.is_network(path) else "excl"
             kinds[key] = kind
         new["path_kinds"] = kinds
-        new["script_keep_open"] = bool(self.var_keep.get())
         save_config(new)
         self.app.cfg = load_config()
         self.app._rebuild_root_kinds()
