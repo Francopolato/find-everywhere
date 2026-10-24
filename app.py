@@ -24,9 +24,10 @@ import time
 import tkinter as tk
 import traceback
 from contextlib import suppress
-from tkinter import filedialog, simpledialog, ttk
+from tkinter import filedialog, messagebox, simpledialog, ttk
 from tkinter import font as tkfont
 
+import indexscope
 import updater
 from config import APP_NAME, DB_PATH, app_dir, load_config, save_config
 from hotkeys import HotkeyManager, normalize_hotkey
@@ -39,7 +40,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.15"
+VERSION = "1.16"
 
 
 def log(msg: str) -> None:
@@ -246,10 +247,13 @@ class SpotlightApp:
             self.filter = "all"
         self.view: list[dict] = []
         self.source_colors = {
-            "pc": C["accent"],      # indice di Windows
-            "index": "#5fbf7f",     # indice locale
-            "net": C["warn"],       # cartelle scansionate / rete
+            "pc": C["accent"],        # indice di Windows Search (blu)
+            "index": "#5fbf7f",       # indice locale generico (verde)
+            "net": C["warn"],         # cartelle personalizzate di rete (ambra)
+            "excl": "#a78bfa",        # cartelle escluse dall'indice di Windows (viola)
         }
+        self.root_kinds: dict[str, str] = {}
+        self._rebuild_root_kinds()
 
         self.scale = _dpi_scale()
         self._build_ui()
@@ -628,6 +632,29 @@ class SpotlightApp:
         self.scan = None
         self.busy_scan = False
 
+    def _rebuild_root_kinds(self):
+        """Classifica le cartelle personalizzate: 'net' (rete) o 'excl'
+        (locale non coperta dall'indice di Windows). Serve per i colori."""
+        stored = dict(self.cfg.get("path_kinds") or {})
+        kinds: dict[str, str] = {}
+        for path in self.cfg.get("paths", []):
+            key = os.path.normpath(path).lower()
+            kind = stored.get(key)
+            if kind not in ("net", "excl"):
+                kind = "net" if indexscope.is_network(path) else "excl"
+            kinds[key] = kind
+        self.root_kinds = kinds
+
+    def _classify(self, path: str) -> str:
+        """Tipo della cartella personalizzata che contiene il percorso."""
+        low = os.path.normpath(str(path or "")).lower()
+        best = ""
+        best_len = 0
+        for root, kind in self.root_kinds.items():
+            if (low == root or low.startswith(root + "\\")) and len(root) > best_len:
+                best, best_len = kind, len(root)
+        return best
+
     def _merge(self, items, source):
         added = False
         links_on = bool(self.cfg.get("search_links", True))
@@ -637,6 +664,14 @@ class SpotlightApp:
                 continue
             if not links_on and is_link(path):
                 continue
+            # i risultati dell'indice locale / della scansione prendono il colore
+            # della cartella personalizzata da cui provengono
+            if it.get("source") in (None, "index", "net"):
+                kind = self._classify(path)
+                if kind:
+                    it["source"] = kind
+                elif not it.get("source"):
+                    it["source"] = source
             key = path.lower()
             if key in self.seen:
                 continue
@@ -1181,8 +1216,8 @@ class SettingsWindow(tk.Toplevel):
         self._check(box1, "Nascondi quando la finestra perde il focus",
                     self.var_focus)
 
-        # ------- cartelle -------
-        box2 = self._section("Cartelle da cercare (anche di rete: \\\\server\\share)")
+        # ------- cartelle personalizzate -------
+        box2 = self._section("Cartelle personalizzate (anche di rete: \\\\server\\share)")
         listwrap = tk.Frame(box2, bg=C["bg2"])
         listwrap.pack(fill="x", padx=8, pady=4)
         self.lb_paths = tk.Listbox(listwrap, height=5, bg=C["bg3"], fg=C["fg"],
@@ -1198,6 +1233,24 @@ class SettingsWindow(tk.Toplevel):
         self._button(btns, "Aggiungi…", self._add_path).pack(fill="x", pady=1)
         self._button(btns, "Rimuovi", self._remove_path).pack(fill="x", pady=1)
         self._button(btns, "Ricostruisci indice", self._rebuild).pack(fill="x", pady=1)
+
+        # legenda dei colori usati nei risultati
+        leg = tk.Frame(box2, bg=C["bg2"])
+        leg.pack(fill="x", padx=10, pady=(4, 2))
+        tk.Label(leg, text="Colori nei risultati:", bg=C["bg2"], fg=C["dim"],
+                 font=self.f_small).grid(row=0, column=0, columnspan=2,
+                                         sticky="w", pady=(0, 2))
+        legend = (
+            (C["accent"], "indice di Windows Search"),
+            ("#5fbf7f", "indice locale dell'app"),
+            (C["warn"], "cartelle personalizzate di rete"),
+            ("#a78bfa", "cartelle escluse dall'indice di Windows (confermate)"),
+        )
+        for row, (color, label) in enumerate(legend, start=1):
+            tk.Label(leg, text="   ", bg=color, bd=0).grid(row=row, column=0,
+                                                           sticky="w")
+            tk.Label(leg, text="  " + label, bg=C["bg2"], fg=C["dim"],
+                     font=self.f_small).grid(row=row, column=1, sticky="w")
 
         self.var_index = tk.BooleanVar(value=bool(self.cfg.get("index_on_startup", True)))
         self._check(box2, "Indicizza all'avvio (risultati istantanei)", self.var_index)
@@ -1370,19 +1423,61 @@ class SettingsWindow(tk.Toplevel):
 
     # ---------- cartelle ----------
     def _add_path(self):
-        p = filedialog.askdirectory(parent=self, title="Cartella da cercare")
-        if p:
-            p = os.path.normpath(p)
-            if p not in self.cfg["paths"]:
-                self.cfg["paths"].append(p)
-                self.lb_paths.insert("end", p)
+        p = filedialog.askdirectory(parent=self, title="Cartella personalizzata da cercare")
+        if not p:
+            return
+        p = os.path.normpath(p)
+        if any(os.path.normpath(x).lower() == p.lower() for x in self.cfg["paths"]):
+            self.status.config(text="Questa cartella e' gia' nell'elenco", fg=C["warn"])
+            self.lb_paths.selection_clear(0, "end")
+            return
+
+        kind = "net" if indexscope.is_network(p) else "excl"
+        if self.var_win.get() and kind == "excl":
+            indexed = indexscope.folder_in_index(p)
+            if indexed:
+                messagebox.showerror(
+                    "Cartella gia' nell'indice di Windows",
+                    f"{p}\n\nQuesta cartella e' gia' coperta dall'indice di Windows "
+                    "Search: aggiungerla come cartella personalizzata darebbe "
+                    "risultati duplicati.\n\nPer aggiungerla devi prima disattivare "
+                    "«Cerca anche nell'indice di Windows».",
+                    parent=self)
+                self.status.config(text="Cartella rifiutata: e' gia' nell'indice di Windows",
+                                   fg=C["err"])
+                return
+            ok = messagebox.askokcancel(
+                "Cartella esclusa dall'indice di Windows",
+                f"{p}\n\nQuesta cartella NON risulta coperta dall'indice di Windows "
+                "Search (esclusa dalle opzioni di indicizzazione o fuori dagli "
+                "scope).\n\nVerra' cercata solo dalla scansione dell'app e mostrata "
+                "col colore delle cartelle escluse dall'indice.\n\nContinuare?",
+                parent=self)
+            if not ok:
+                self.status.config(text="Aggiunta annullata", fg=C["warn"])
+                return
+
+        self.cfg["paths"].append(p)
+        kinds = dict(self.cfg.get("path_kinds") or {})
+        kinds[p.lower()] = kind
+        self.cfg["path_kinds"] = kinds
+        self.lb_paths.insert("end", p)
+        self.status.config(
+            text=("Cartella di rete aggiunta" if kind == "net"
+                  else "Cartella aggiunta (esclusa dall'indice di Windows)")
+                 + " — ricorda di premere Salva", fg=C["accent"])
 
     def _remove_path(self):
         sel = self.lb_paths.curselection()
         if sel:
             i = sel[0]
             self.lb_paths.delete(i)
-            self.cfg["paths"].pop(i)
+            removed = self.cfg["paths"].pop(i)
+            kinds = dict(self.cfg.get("path_kinds") or {})
+            kinds.pop(os.path.normpath(removed).lower(), None)
+            self.cfg["path_kinds"] = kinds
+            self.status.config(text="Cartella rimossa (ricorda di premere Salva)",
+                               fg=C["accent"])
 
     def _rebuild(self):
         self.app.db.clear_all()
@@ -1616,8 +1711,17 @@ class SettingsWindow(tk.Toplevel):
         new["win_search"] = bool(self.var_win.get())
         new["excludes"] = [e for e in self.cfg["excludes"] if e]
         new["search_links"] = bool(self.var_links.get())
+        kinds = {}
+        for path in new["paths"]:
+            key = os.path.normpath(path).lower()
+            kind = (self.app.root_kinds or {}).get(key)
+            if kind not in ("net", "excl"):
+                kind = "net" if indexscope.is_network(path) else "excl"
+            kinds[key] = kind
+        new["path_kinds"] = kinds
         save_config(new)
         self.app.cfg = load_config()
+        self.app._rebuild_root_kinds()
 
         self.grab_release()
         self.destroy()

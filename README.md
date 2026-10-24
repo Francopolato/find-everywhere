@@ -75,7 +75,23 @@ file cancellati vengono rimosse).
 |---|---|
 | blu | indice di Windows Search |
 | verde | indice locale SQLite |
-| ambra | cartelle configurate / rete (scansione) |
+| ambra | cartella **personale di rete** (scansione dello share) |
+| viola | cartella **esclusa dall'indice di Windows**, aggiunta a mano e confermata |
+
+La stessa legenda è ripetuta nelle **impostazioni**, sezione *Cartelle personalizzate*.
+
+Aggiungendo una cartella personale, se «Cerca anche nell'indice di Windows» è attivo:
+
+* se la cartella è **già coperta dall'indice di Windows** → messaggio di **errore**
+  (darebbe risultati duplicati): per aggiungerla va prima disattivata la ricerca
+  nell'indice di Windows;
+* se la cartella è **esclusa dall'indice** (o fuori dagli scope) → **avviso con
+  conferma**: viene cercata solo dalla scansione dell'app e colorata in viola;
+* se è di **rete** → aggiunta senza domande, colore ambra.
+
+La distinzione non si basa su una query all'indice (che usa nomi *localizzati*,
+es. `C:\Utenti\...Documenti`), ma sulle regole reali di indicizzazione
+(`CrawlScopeManager` nel registro): vince la regola più specifica, come fa Windows.
 
 Sulla destra di ogni riga, dove serve: `rete · percorso` per i risultati della
 scansione cartelle, `testo · percorso` quando la corrispondenza è nel **contenuto**
