@@ -314,7 +314,8 @@ Chiavi principali del config:
   "index_on_startup": true,
   "live_scan": true,
   "max_results": 120,
-  "hide_on_focus_loss": true
+  "hide_on_focus_loss": true,
+  "refresh_minutes": 0
 }
 ```
 

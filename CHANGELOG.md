@@ -4,6 +4,14 @@ Modifiche rilevanti a **find-everywhere**, dalla più recente. Le versioni
 corrispondono ai tag git (`vX.Y`); le note complete di ogni release sono nella
 pagina [Releases](https://github.com/Francopolato/find-everywhere/releases).
 
+## v1.28 — aggiornamento periodico opzionale dell'indice
+
+- nuovo campo in Impostazioni (Cartelle personalizzate): **«Aggiorna l'indice in
+  background ogni N minuti»**, `0` = mai (default), **minimo 5** minuti;
+- parte solo se l'app è inattiva da almeno 20 s e non c'è una ricerca/scansione in
+  corso; fa un giro completo (con pulizia dei file spostati/cancellati) e lo
+  registra nel log.
+
 ## v1.27 — spostamenti e cancellazioni aggiornati a ogni ricerca
 
 - alla fine di una **scansione completa** durante una ricerca, l'indice viene

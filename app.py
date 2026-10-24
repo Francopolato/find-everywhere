@@ -41,7 +41,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.27"
+VERSION = "1.28"
 
 
 def log(msg: str) -> None:
@@ -340,6 +340,8 @@ class SpotlightApp:
         self.win_w, self.win_h = w, h
         self._drag_off: tuple[int, int] | None = None
         self._shown_at = 0.0
+        self._last_activity = time.time()
+        self._last_refresh = time.time()
 
         outer = tk.Frame(r, bg=C["bg"])
         outer.pack(fill="both", expand=True, padx=1, pady=1)
@@ -662,6 +664,7 @@ class SpotlightApp:
     def _run_search(self):
         self._debounce = None
         self._pending = False
+        self._last_activity = time.time()
         q = self.entry.get().strip()
         self.query_now = q
         self._stop_scan()
@@ -1166,7 +1169,33 @@ class SpotlightApp:
         if self._tick_count % 30 == 0 and not self.hotkeys.alive():
             log("thread hotkey morto: ri-registro")
             self._apply_hotkeys()
+        self._maybe_periodic_refresh()
         self.root.after(110, self._tick)
+
+    def _maybe_periodic_refresh(self):
+        """Aggiornamento periodico opzionale dell'indice (in background).
+
+        Parte solo se: opzione attiva, nessuna ricerca/scansione in corso e
+        l'app e' inattiva da almeno 20 s. L'intervallo minimo e' 5 minuti.
+        """
+        try:
+            minutes = int(self.cfg.get("refresh_minutes") or 0)
+        except (TypeError, ValueError):
+            return
+        if minutes <= 0:
+            return
+        if self.busy_index or self.busy_scan or self.busy_win:
+            return
+        if not [p for p in self.cfg.get("paths", []) if p]:
+            return
+        now = time.time()
+        if now - self._last_activity < 20:
+            return
+        if now - self._last_refresh < max(300, minutes * 60):
+            return
+        log(f"refresh periodico dell'indice (ogni {minutes} min)")
+        self._last_refresh = now
+        self.start_indexer()
 
     # ------------------------------------------------------- indice
     def start_indexer(self, clear_first=False):
@@ -1251,6 +1280,7 @@ class SpotlightApp:
             self.set_status(ev[1], "accent")
         elif kind == "idx_done":
             self.busy_index = False
+            self._last_refresh = time.time()
             self.set_status(f"Indice aggiornato · {ev[1]} file · "
                             f"totale indice: {self.db.count()} file", "dim")
         elif kind == "idx_error":
@@ -1396,6 +1426,18 @@ class SettingsWindow(tk.Toplevel):
         self.var_links = tk.BooleanVar(value=bool(self.cfg.get("search_links", True)))
         self._check(box2, "Mostra anche i collegamenti (.lnk, icona con ↗)",
                     self.var_links)
+        row_ref = tk.Frame(box2, bg=C["bg2"])
+        row_ref.pack(fill="x", padx=10, pady=(2, 6))
+        tk.Label(row_ref, text="Aggiorna l'indice in background ogni",
+                 bg=C["bg2"], fg=C["dim"], font=self.f_small).pack(side="left")
+        self.ent_refresh = tk.Entry(row_ref, width=4, bg=C["bg3"], fg=C["fg"],
+                                    insertbackground=C["fg"], relief="flat",
+                                    font=self.f_small, justify="center")
+        self.ent_refresh.pack(side="left", padx=6)
+        self.ent_refresh.insert(0, str(int(self.cfg.get("refresh_minutes") or 0)))
+        tk.Label(row_ref, text="minuti (0 = mai, minimo 5) — parte solo con l'app "
+                              "inattiva", bg=C["bg2"], fg=C["dim"],
+                 font=self.f_small).pack(side="left")
 
         # ------- esclusioni -------
         box5 = self._section("Esclusioni (cartelle ignorate dalla scansione)")
@@ -1879,6 +1921,13 @@ class SettingsWindow(tk.Toplevel):
                 kind = "net" if indexscope.is_network(path) else "excl"
             kinds[key] = kind
         new["path_kinds"] = kinds
+        try:
+            minutes = int(str(self.ent_refresh.get()).strip() or 0)
+        except (TypeError, ValueError):
+            minutes = 0
+        if 0 < minutes < 5:
+            minutes = 5          # intervallo minimo: non martellare la rete
+        new["refresh_minutes"] = minutes
         save_config(new)
         self.app.cfg = load_config()
         self.app._rebuild_root_kinds()
