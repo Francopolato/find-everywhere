@@ -4,6 +4,15 @@ Modifiche rilevanti a **find-everywhere**, dalla più recente. Le versioni
 corrispondono ai tag git (`vX.Y`); le note complete di ogni release sono nella
 pagina [Releases](https://github.com/Francopolato/find-everywhere/releases).
 
+## v1.27 — spostamenti e cancellazioni aggiornati a ogni ricerca
+
+- alla fine di una **scansione completa** durante una ricerca, l'indice viene
+  ripulito: i file spostati o cancellati spariscono, i nuovi entrano (prima la
+  pulizia avveniva solo all'avvio o con *Ricostruisci indice*);
+- la pulizia viene **saltata** se la scansione è stata interrotta o se qualche
+  cartella è risultata illeggibile (evita cancellazioni per errori temporanei di
+  rete), e viene registrata nel log.
+
 ## v1.26 — «Apri in Explorer»
 
 - voce del menu contestuale e legenda rinominate: **«Apri in Explorer»** invece di

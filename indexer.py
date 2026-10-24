@@ -139,11 +139,16 @@ class FileIndex:
         conn.commit()
 
 
-def walk(root: str, excludes=None, stop: threading.Event | None = None, batch_size: int = 800):
+def walk(root: str, excludes=None, stop: threading.Event | None = None,
+         batch_size: int = 800, errors: list | None = None):
     """Genera batch di tuple (path, name, name_lower, dir, root, mtime, size, is_dir).
 
     Usa os.scandir (molto piu' veloce di Path.rglob). Elenca sia file sia
     cartelle, ma non scende dentro link/junction (evita loop infiniti).
+
+    Se viene passata `errors`, vi si aggiungono le cartelle illeggibili: chi
+    chiama puo' cosi' capire se la scansione e' stata completa (serve prima di
+    cancellare dall'indice i file che non sono stati visti).
     """
     excl = {e.lower() for e in (excludes or DEFAULT_EXCLUDES)}
     stack = [root]
@@ -156,6 +161,8 @@ def walk(root: str, excludes=None, stop: threading.Event | None = None, batch_si
             with os.scandir(current) as it:
                 entries = list(it)
         except OSError:
+            if errors is not None:
+                errors.append(current)
             continue
         for e in entries:
             name = e.name
@@ -205,14 +212,19 @@ class IndexerThread(threading.Thread):
                     continue
                 self.events.put(("idx", f"Indicizzazione: {root}"))
                 mark = time.time()
+                errors: list = []
                 n = 0
-                for batch in walk(root, self.excludes, self.stop_event):
+                for batch in walk(root, self.excludes, self.stop_event,
+                                  errors=errors):
                     self.db.upsert(batch, mark)
                     n += len(batch)
                     total += len(batch)
                     if n % 2000 < len(batch):
                         self.events.put(("idx", f"Indicizzazione: {root} — {n} file"))
-                if not self.stop_event.is_set():
+                if errors:
+                    self.events.put(("idx", f"Attenzione: {len(errors)} cartelle non "
+                                            f"leggibili in {root}: indice non ripulito"))
+                if not self.stop_event.is_set() and not errors:
                     removed = self.db.prune_root(root, mark)
                     if removed:
                         self.events.put(("idx", f"Rimossi {removed} riferimenti obsoleti"))
@@ -249,10 +261,13 @@ class LiveScanner(threading.Thread):
                     return
                 self.events.put(("scan_status", self.scan_id,
                                  f"Caricamento file non indicizzati in corso…  {root}"))
-                for batch in walk(root, self.excludes, self.stop_event):
+                mark = time.time()
+                errors: list = []
+                for batch in walk(root, self.excludes, self.stop_event,
+                                  errors=errors):
                     if self.stop_event.is_set():
                         return
-                    self.db.upsert(batch)
+                    self.db.upsert(batch, mark)
                     indexed += len(batch)
                     for row in batch:
                         if (self.rx is not None and found < self.limit
@@ -263,6 +278,12 @@ class LiveScanner(threading.Thread):
                     if hits:
                         self.events.put(("scan_hits", self.scan_id, hits))
                         hits = []
+                # scansione completa e senza errori: togli dall'indice i file
+                # spostati/cancellati (non visti con questo timestamp)
+                if not self.stop_event.is_set() and not errors:
+                    removed = self.db.prune_root(root, mark)
+                    if removed:
+                        self.events.put(("scan_pruned", self.scan_id, removed))
             self.events.put(("scan_done", self.scan_id, indexed))
         except Exception as exc:  # pragma: no cover
             self.events.put(("scan_error", self.scan_id, f"{type(exc).__name__}: {exc}"))

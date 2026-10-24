@@ -80,7 +80,12 @@ e **scrive nell'indice** tutto quello che incontra → la seconda volta è
 istantanea.
 
 L'indice viene anche ricostruito all'avvio (dopo un walk completo le voci di
-file cancellati vengono rimosse).
+file cancellati vengono rimosse). Lo stesso "riordino" avviene **alla fine di una
+scansione completa durante una ricerca**: i file spostati o cancellati spariscono
+dall'indice, i nuovi entrano. Se la scansione viene interrotta (nuova ricerca
+mentre girava) o se qualche cartella risulta illeggibile, la pulizia viene
+saltata per quel percorso, così non si cancellano voci valide per un errore
+temporaneo di rete.
 
 ## Risultati
 

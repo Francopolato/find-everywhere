@@ -41,7 +41,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.26"
+VERSION = "1.27"
 
 
 def log(msg: str) -> None:
@@ -1227,6 +1227,9 @@ class SpotlightApp:
                 self._render()
                 self.set_status(f"Caricamento file non indicizzati in corso…  "
                                 f"{len(self.results)} trovati", "accent")
+        elif kind == "scan_pruned":
+            if ev[1] == self.scan_id:
+                log(f"indice ripulito durante la ricerca: {ev[2]} voci rimosse")
         elif kind == "scan_status":
             sid, text = ev[1], ev[2]
             if sid == self.scan_id:
