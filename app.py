@@ -300,7 +300,7 @@ class SpotlightApp:
         self.font_row = tkfont.Font(family="Segoe UI", size=10)
         self.font_row_b = tkfont.Font(family="Segoe UI", size=10, weight="bold")
         self.font_small = tkfont.Font(family="Segoe UI", size=8)
-        self.font_icon = tkfont.Font(family="Segoe UI Emoji", size=12)
+        self.font_icon = tkfont.Font(family="Segoe UI Emoji", size=11)
 
         # ---- riga di input ----
         top = tk.Frame(outer, bg=C["bg2"])
@@ -751,6 +751,8 @@ class SpotlightApp:
         total = len(self.view)
         self.offset = max(0, min(self.offset, max(0, total - MAX_ROWS)))
         visible = self.view[self.offset:self.offset + MAX_ROWS]
+        # larghezza in pixel dell'icona: deve contenere anche la freccia dei .lnk
+        icon_w = self.font_icon.measure("\U0001F4C1\u2197") + int(10 * self.scale)
 
         for i, item in enumerate(visible):
             abs_idx = self.offset + i
@@ -767,9 +769,14 @@ class SpotlightApp:
             if link:
                 icon += "↗"
             color = self.source_colors.get(source, C["accent"])
-            lbl_i = tk.Label(f, text=icon, bg=C["bg"], fg=color,
-                             font=self.font_icon, width=3)
-            lbl_i.pack(side="left")
+            # contenitore a larghezza fissa (pixel): l'icona doppia non si taglia
+            # e i nomi restano allineati su tutte le righe
+            box = tk.Frame(f, bg=C["bg"], width=icon_w)
+            box.pack(side="left", padx=(6, 2))
+            box.pack_propagate(False)
+            lbl_i = tk.Label(box, text=icon, bg=C["bg"], fg=color,
+                             font=self.font_icon, anchor="w")
+            lbl_i.pack(side="left", fill="both")
 
             lbl_n = tk.Label(f, text=self._fit_name(item), bg=C["bg"], fg=C["fg"],
                              font=self.font_row_b, anchor="w")
@@ -788,21 +795,22 @@ class SpotlightApp:
                              bg=C["bg"], fg=C["dim"], font=self.font_row, anchor="e")
             lbl_d.pack(side="right", padx=(8, 6))
 
-            for w in (f, lbl_i, lbl_n, lbl_d):
+            for w in (f, box, lbl_i, lbl_n, lbl_d):
                 w.bind("<Button-1>", lambda e, i=abs_idx: self._click_row(i))
                 w.bind("<Button-3>", lambda e, i=abs_idx: self._context_menu(e, i))
                 w.bind("<Enter>", lambda e, i=abs_idx: self._hover(i))
-            self.row_widgets.append((abs_idx, f, lbl_i, lbl_n, lbl_d))
+            self.row_widgets.append((abs_idx, f, box, lbl_i, lbl_n, lbl_d))
 
         self._paint_selection()
 
     def _paint_selection(self):
-        for abs_idx, f, lbl_i, lbl_n, lbl_d in self.row_widgets:
+        for abs_idx, f, box, lbl_i, lbl_n, lbl_d in self.row_widgets:
             if abs_idx == self.sel:
                 bg, fg = C["sel"], "#ffffff"
             else:
                 bg, fg = C["bg"], C["fg"]
             f.config(bg=bg)
+            box.config(bg=bg)
             lbl_i.config(bg=bg)
             lbl_n.config(bg=bg, fg=fg)
             lbl_d.config(bg=bg, fg="#b9c3d6" if abs_idx == self.sel else C["dim"])
@@ -1098,6 +1106,15 @@ class SpotlightApp:
 # Finestra impostazioni
 # ----------------------------------------------------------------------------
 class SettingsWindow(tk.Toplevel):
+    # stato della sezione "Aggiornamenti" (creato in __init__, usato dai metodi)
+    btn_check: tk.Button
+    btn_update: tk.Button
+    btn_restart: tk.Button
+    upd_lbl: tk.Label
+    _upd_queue: queue.Queue
+    _release: dict | None
+    _upd_busy: bool
+
     def __init__(self, app: SpotlightApp, on_close):
         super().__init__(app.root)
         self.app = app
