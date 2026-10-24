@@ -786,8 +786,10 @@ class SpotlightApp:
         total = len(self.view)
         self.offset = max(0, min(self.offset, max(0, total - MAX_ROWS)))
         visible = self.view[self.offset:self.offset + MAX_ROWS]
-        # larghezza in pixel dell'icona: deve contenere anche la freccia dei .lnk
+        # larghezza/altezza in pixel dell'icona: deve contenere anche la freccia
+        # dei .lnk; senza altezza esplicita il contenitore collasserebbe a 0 px
         icon_w = self.font_icon.measure("\U0001F4C1\u2197") + int(10 * self.scale)
+        icon_h = self.font_icon.metrics("linespace") + int(6 * self.scale)
 
         for i, item in enumerate(visible):
             abs_idx = self.offset + i
@@ -806,7 +808,7 @@ class SpotlightApp:
             color = self.source_colors.get(source, C["accent"])
             # contenitore a larghezza fissa (pixel): l'icona doppia non si taglia
             # e i nomi restano allineati su tutte le righe
-            box = tk.Frame(f, bg=C["bg"], width=icon_w)
+            box = tk.Frame(f, bg=C["bg"], width=icon_w, height=icon_h)
             box.pack(side="left", padx=(6, 2))
             box.pack_propagate(False)
             lbl_i = tk.Label(box, text=icon, bg=C["bg"], fg=color,
