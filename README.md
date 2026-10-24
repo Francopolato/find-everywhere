@@ -9,6 +9,39 @@ Ctrl+Alt+Spazio  ->  apre la finestra (chiudi con Esc). Configurabile o disabili
                     impostazioni -> hotkey principale -> "Nessuna" (campo vuoto).
 ```
 
+## Installazione
+
+Due modi, il risultato è lo stesso. Requisiti: Windows 10/11.
+
+**A) Pacchetto della release** (consigliato): scarica `find-everywhere-vX.Y.zip`
+da [Releases](https://github.com/Francopolato/find-everywhere/releases),
+estrailo dove vuoi e avvia:
+
+```text
+FindEverywhere.exe      eseguibile unico, nessun Python richiesto
+FindEverywhere.pyw      alternativa senza exe (usa il Python installato)
+```
+
+**B) Da sorgente (git clone)**:
+
+```bat
+git clone https://github.com/Francopolato/find-everywhere.git
+cd find-everywhere
+pip install -r requirements.txt      :: pywin32, per l'indice di Windows
+run.bat                              :: oppure: python app.py
+```
+
+`pip install` serve solo per la ricerca nell'indice di Windows: senza
+`pywin32` l'app parte lo stesso e usa indice locale + scansione delle cartelle.
+
+Al primo avvio: ingranaggio ⚙ (o `Ctrl+,`) → **Aggiungi…** la cartella (anche
+`\\server\share`) → *Salva*. Parte l'indicizzazione; la prima ricerca su uno
+share di rete può richiedere qualche secondo, poi è istantanea.
+
+Dati e log (in entrambi i modi): `%APPDATA%\SpotlightPy\` → `config.json`,
+`index.db`, `spotlightpy.log`. Per l'avvio automatico vedi *Avvio automatico*;
+per compilare l'exe vedi *Compilare*.
+
 ## Come funziona la ricerca
 
 Ogni ricerca unisce tre fonti, in ordine di velocità:
