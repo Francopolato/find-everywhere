@@ -48,6 +48,7 @@ DEFAULT_CONFIG = {
     "win_content_search": True,  # cerca anche nel testo dei documenti indicizzati
     "index_on_startup": True,    # costruisce l'indice locale all'avvio
     "live_scan": True,           # scansione "a vista" a ogni ricerca (rotellina)
+    "search_links": True,        # includi i collegamenti .lnk nei risultati
     "max_results": 120,
     "hide_on_focus_loss": True,
     # filtro risultati: "all" | "files" | "dirs" (ciclo con Ctrl+T o click)

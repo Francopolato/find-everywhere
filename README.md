@@ -63,16 +63,34 @@ file cancellati vengono rimosse).
 
 ## Risultati
 
-* **file e cartelle**: le cartelle hanno icona 📁 e nome in evidenza;
+**L'icona dice il tipo, il colore dice da dove arriva** (niente pallini generici):
+
+| icona | significato |
+|---|---|
+| 📁 | cartella |
+| 📄 | file |
+| 📁↗ / 📄↗ | **collegamento** (`.lnk`) che punta a una cartella / a un file; a destra si vede la destinazione (`→ C:\...`) |
+
+| colore dell'icona | fonte |
+|---|---|
+| blu | indice di Windows Search |
+| verde | indice locale SQLite |
+| ambra | cartelle configurate / rete (scansione) |
+
+Sulla destra di ogni riga, dove serve: `rete · percorso` per i risultati della
+scansione cartelle, `testo · percorso` quando la corrispondenza è nel **contenuto**
+del documento.
+
+Altro:
+
 * **estensione sempre visibile**: se il nome non la contiene viene aggiunta dal
   percorso (`.pdf`, `.xlsx`, …);
 * **nomi lunghi**: troncati con `…` **prima dell'estensione**
   (`contratto quadro molto lungo … 2….pdf`), così il tipo di file resta leggibile;
 * **filtro**: in alto a destra il pulsante `Tutti` / `Solo file` / `Solo cartelle`
-  (anche `Ctrl+T`); la scelta viene salvata nel config;
-* icone di origine: 🖥 indice di Windows, 📄 indice locale, 🌐 cartella
-  scansionata a mano, 📃 corrispondenza trovata nel testo del documento,
-  📁 cartella.
+  (anche `Ctrl+T`); la scelta è **persistente**, anche dopo il riavvio;
+* **collegamenti**: inclusi nei risultati per default (`.lnk`),
+  disattivabili da Impostazioni → *Mostra anche i collegamenti*.
 
 I percorsi dei risultati di Windows Search vengono ricavati da `System.ItemUrl`:
 `System.ItemPathDisplay` restituisce il percorso **localizzato**
@@ -281,6 +299,23 @@ In alternativa al collegamento si può usare il registro
 (`HKCU\Software\Microsoft\Windows\CurrentVersion\Run`, valore
 `find-everywhere` = `"...\FindEverywhere.exe" --startup`) o Utilità di
 pianificazione con "All'accesso" + ritardo di 30 s, se vuoi che parta più tardi.
+
+## Aggiornamenti
+
+Impostazioni → sezione **Aggiornamenti**:
+
+* **Controlla aggiornamenti** confronta la versione installata con l'ultima
+  release GitHub (`releases/latest`);
+* **Aggiorna** applica l'aggiornamento, in due modi:
+  * installazione **da sorgente**: esegue `git pull --ff-only` nella cartella del
+    progetto (serve `git` nel PATH);
+  * installazione **da eseguibile**: scarica lo zip della release, estrae il
+    nuovo `.exe`, rinomina quello in uso in `*.old` e mette il nuovo al suo posto
+    (il `*.old` viene rimosso al riavvio successivo);
+* **Riavvia** chiude e rilancia l'app con la nuova versione.
+
+Nessun servizio esterno: solo `urllib` verso l'API GitHub, e vengono aperte
+soltanto URL http/https.
 
 ## Se l'antivirus blocca l'exe
 

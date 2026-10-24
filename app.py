@@ -27,15 +27,19 @@ from contextlib import suppress
 from tkinter import filedialog, simpledialog, ttk
 from tkinter import font as tkfont
 
+import updater
 from config import APP_NAME, DB_PATH, app_dir, load_config, save_config
 from hotkeys import HotkeyManager, normalize_hotkey
 from indexer import FileIndex, IndexerThread, LiveScanner
+from linkinfo import describe as link_describe
+from linkinfo import is_link
 from query import is_empty as query_is_empty
 from query import name_rank
 from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
-VERSION = "1.14"
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+VERSION = "1.15"
 
 
 def log(msg: str) -> None:
@@ -241,6 +245,11 @@ class SpotlightApp:
         if self.filter not in ("all", "files", "dirs"):
             self.filter = "all"
         self.view: list[dict] = []
+        self.source_colors = {
+            "pc": C["accent"],      # indice di Windows
+            "index": "#5fbf7f",     # indice locale
+            "net": C["warn"],       # cartelle scansionate / rete
+        }
 
         self.scale = _dpi_scale()
         self._build_ui()
@@ -437,6 +446,23 @@ class SpotlightApp:
         with suppress(Exception):
             self.root.destroy()
 
+    def restart_app(self):
+        """Riavvia l'app (dopo un aggiornamento)."""
+        log("riavvio richiesto")
+        prog = sys.executable
+        args: list[str] = []
+        if updater.is_frozen():
+            pass
+        else:
+            args = [os.path.join(APP_DIR, "app.py")]
+            if prog.lower().endswith("python.exe"):
+                candidate = prog[: -len("python.exe")] + "pythonw.exe"
+                if os.path.exists(candidate):
+                    prog = candidate
+        with suppress(Exception):
+            subprocess.Popen([prog, *args], cwd=APP_DIR)
+        self.quit_app()
+
     def _start_show_watcher(self, handle):
         """Aspetta il segnale delle istanze successive: "mostrati"."""
         def run():
@@ -604,9 +630,12 @@ class SpotlightApp:
 
     def _merge(self, items, source):
         added = False
+        links_on = bool(self.cfg.get("search_links", True))
         for it in items:
             path = it.get("path")
             if not path:
+                continue
+            if not links_on and is_link(path):
                 continue
             key = path.lower()
             if key in self.seen:
@@ -729,14 +758,17 @@ class SpotlightApp:
             f.pack(fill="x", padx=8, pady=1)
 
             source = str(item.get("source") or "index")
-            if item.get("is_dir"):
-                icon = "📁"
-            elif item.get("match") == "testo":
-                icon = "📃"
-            else:
-                icon = {"pc": "🖥", "net": "🌐", "index": "📄"}.get(source, "📄")
-            lbl_i = tk.Label(f, text=icon, bg=C["bg"], fg=C["accent"],
-                             font=self.font_icon, width=2)
+            # tipo: cartella o file (per i .lnk vale il target)
+            info = link_describe(item["path"])
+            item.update(info)
+            link = info["is_link"]
+            is_dir = bool(item.get("is_dir")) or bool(info["link_is_dir"])
+            icon = "📁" if is_dir else "📄"
+            if link:
+                icon += "↗"
+            color = self.source_colors.get(source, C["accent"])
+            lbl_i = tk.Label(f, text=icon, bg=C["bg"], fg=color,
+                             font=self.font_icon, width=3)
             lbl_i.pack(side="left")
 
             lbl_n = tk.Label(f, text=self._fit_name(item), bg=C["bg"], fg=C["fg"],
@@ -744,7 +776,12 @@ class SpotlightApp:
             lbl_n.pack(side="left")
 
             avail = max(20, int((self.win_w - 210) / (8 * self.scale / 1.4)))
-            dir_text = item["dir"]
+            if link and info["link_target"]:
+                dir_text = "→ " + info["link_target"]
+            else:
+                dir_text = item["dir"]
+                if source == "net":
+                    dir_text = "rete · " + dir_text
             if item.get("match") == "testo":
                 dir_text = "testo · " + dir_text
             lbl_d = tk.Label(f, text=_shorten(dir_text, int(avail)),
@@ -1149,6 +1186,9 @@ class SettingsWindow(tk.Toplevel):
         self._check(box2, "Indicizza all'avvio (risultati istantanei)", self.var_index)
         self.var_live = tk.BooleanVar(value=bool(self.cfg.get("live_scan", True)))
         self._check(box2, "Scansiona le cartelle a ogni ricerca (rotellina)", self.var_live)
+        self.var_links = tk.BooleanVar(value=bool(self.cfg.get("search_links", True)))
+        self._check(box2, "Mostra anche i collegamenti (.lnk, icona con ↗)",
+                    self.var_links)
 
         # ------- esclusioni -------
         box5 = self._section("Esclusioni (cartelle ignorate dalla scansione)")
@@ -1224,6 +1264,31 @@ class SettingsWindow(tk.Toplevel):
         form.columnconfigure(1, weight=1)
 
         self._refresh_scripts()
+
+        # ------- aggiornamenti -------
+        box6 = self._section("Aggiornamenti")
+        tk.Label(box6, text=f"Versione installata: v{VERSION} ({updater.mode_label()})",
+                 bg=C["bg2"], fg=C["fg"], font=self.f_small, anchor="w").pack(
+            fill="x", padx=10, pady=(6, 2))
+        urow = tk.Frame(box6, bg=C["bg2"])
+        urow.pack(fill="x", padx=8, pady=(2, 4))
+        self.btn_check = self._button(urow, "Controlla aggiornamenti",
+                                      self._check_updates)
+        self.btn_check.pack(side="left")
+        self.btn_update = self._button(urow, "Aggiorna", self._do_update)
+        self.btn_update.pack(side="left", padx=6)
+        self.btn_update.config(state="disabled")
+        self.btn_restart = self._button(urow, "Riavvia", self.app.restart_app)
+        self.btn_restart.pack(side="left", padx=6)
+        self.btn_restart.config(state="disabled")
+        self.upd_lbl = tk.Label(
+            box6, text="Premi «Controlla aggiornamenti» per vedere se ci sono novità.",
+            bg=C["bg2"], fg=C["dim"], font=self.f_small, anchor="w",
+            justify="left", wraplength=540)
+        self.upd_lbl.pack(fill="x", padx=10, pady=(0, 6))
+        self._upd_busy = False
+        self._release: dict | None = None
+        self._upd_queue: queue.Queue = queue.Queue()
 
         # ------- pulsanti -------
         self._button(self.bottom_bar, "Salva", self._save).pack(side="right")
@@ -1437,6 +1502,67 @@ class SettingsWindow(tk.Toplevel):
         self.status.config(text="Script salvato (ricorda di premere Salva)",
                            fg=C["accent"])
 
+    # ---------- aggiornamenti ----------
+    def _upd_start(self, kind: str, func, *args):
+        if self._upd_busy:
+            return
+        self._upd_busy = True
+        self.btn_check.config(state="disabled")
+        self.btn_update.config(state="disabled")
+        self.upd_lbl.config(text="Operazione in corso…", fg=C["accent"])
+
+        def work():
+            try:
+                self._upd_queue.put((kind, func(*args)))
+            except Exception as exc:  # noqa: BLE001 - l'errore va mostrato in GUI
+                self._upd_queue.put(("error", f"{type(exc).__name__}: {exc}"))
+
+        threading.Thread(target=work, daemon=True, name="fe-update").start()
+        self.after(150, self._upd_poll)
+
+    def _upd_poll(self):
+        try:
+            kind, data = self._upd_queue.get_nowait()
+        except queue.Empty:
+            self.after(150, self._upd_poll)
+            return
+        self._upd_busy = False
+        self.btn_check.config(state="normal")
+        if kind == "error":
+            self.upd_lbl.config(text=f"Errore: {data}", fg=C["err"])
+            return
+        if kind == "check":
+            self._release = data if isinstance(data, dict) else None
+            tag = (self._release or {}).get("tag") or ""
+            if tag and updater.is_newer(tag, VERSION):
+                self.btn_update.config(state="normal")
+                self.upd_lbl.config(
+                    text=f"Disponibile {tag} (installata v{VERSION}). Premi «Aggiorna».",
+                    fg=C["accent"])
+            else:
+                self.upd_lbl.config(
+                    text=f"Sei aggiornato: v{VERSION} (ultima release: {tag or 'n/d'}).",
+                    fg="#5fbf7f")
+            return
+        ok, msg = data if isinstance(data, tuple) else (False, str(data))
+        self.upd_lbl.config(text=("Fatto: " if ok else "Errore: ") + msg,
+                            fg="#5fbf7f" if ok else C["err"])
+        if ok:
+            self.btn_restart.config(state="normal")
+
+    def _check_updates(self):
+        self._upd_start("check", updater.latest_release)
+
+    def _do_update(self):
+        if not self._release:
+            self.upd_lbl.config(text="Prima premi «Controlla aggiornamenti».",
+                                fg=C["warn"])
+            return
+        if updater.is_frozen():
+            self._upd_start("update", updater.update_exe, self._release.get("zip", ""))
+        else:
+            self._upd_start("update", updater.update_from_git, APP_DIR)
+
     # ---------- salva / annulla ----------
     def _save(self):
         hk = self.hk_main.get_hotkey()
@@ -1472,6 +1598,7 @@ class SettingsWindow(tk.Toplevel):
         new["live_scan"] = bool(self.var_live.get())
         new["win_search"] = bool(self.var_win.get())
         new["excludes"] = [e for e in self.cfg["excludes"] if e]
+        new["search_links"] = bool(self.var_links.get())
         save_config(new)
         self.app.cfg = load_config()
 
@@ -1576,6 +1703,8 @@ def main():
         return
     with suppress(Exception):
         ctypes.windll.shcore.SetProcessDpiAwareness(1)
+
+    updater.cleanup_old_exe()
 
     show_event = None
     if not smoke:
