@@ -131,9 +131,14 @@ class WindowsSearch:
             return [], info
 
         strategies = []
+        fetch = limit
         if len(terms) == 1:
             # un solo termine: LIKE con % ai lati = ricerca anche a meta' parola
             # (`*tratt` trova "contratto"). Misurato ~0,3 s, accettabile.
+            # Si chiedono piu' righe del limite: con un frammento corto (es.
+            # "*menti") i match sono tanti e altrimenti la cartella cercata
+            # finisce fuori dal TOP. L'app ordina e tronca a max_results.
+            fetch = max(limit * 5, 300)
             strategies.append(("nome", contains_like("System.ItemNameDisplay", q)))
         else:
             # piu' termini: CONTAINS con prefissi di parola. Il LIKE multi-termine
@@ -156,7 +161,8 @@ class WindowsSearch:
                 for label, where in strategies:
                     if label != "nome" and len(items) >= want:
                         break
-                    rows = self._rows(conn, build_sql(limit, where))
+                    rows = self._rows(conn, build_sql(
+                        fetch if label == "nome" else limit, where))
                     info["strategies"].append(f"{label}:{len(rows)}")
                     for name, shown_path, url in rows:
                         if not self._keep(name, shown_path or url):
@@ -177,9 +183,9 @@ class WindowsSearch:
                             "match": label,
                             "is_dir": os.path.isdir(path),
                         })
-                        if len(items) >= limit:
+                        if len(items) >= fetch:
                             break
-                    if len(items) >= limit:
+                    if len(items) >= fetch:
                         break
             self.available = True
         except Exception as exc:  # noqa: BLE001 - Windows Search puo' non esserci

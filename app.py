@@ -15,6 +15,7 @@ Uso:  python app.py            (GUI normale)
 from __future__ import annotations
 
 import ctypes
+import ctypes.wintypes as wt
 import os
 import queue
 import subprocess
@@ -40,7 +41,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.20"
+VERSION = "1.21"
 
 
 def log(msg: str) -> None:
@@ -128,6 +129,47 @@ def launch(cmdline: str) -> None:
         subprocess.Popen(line, close_fds=True)  # noqa: S603 - comando utente
     except OSError:
         subprocess.Popen(f'cmd.exe /s /c "{line}"', close_fds=True)  # noqa: S603
+
+
+class _RECT(ctypes.Structure):
+    _fields_ = [("left", wt.LONG), ("top", wt.LONG),
+                ("right", wt.LONG), ("bottom", wt.LONG)]
+
+
+class _MONITORINFOEXW(ctypes.Structure):
+    _fields_ = [("cbSize", wt.DWORD), ("rcMonitor", _RECT), ("rcWork", _RECT),
+                ("dwFlags", wt.DWORD), ("szDevice", wt.WCHAR * 32)]
+
+
+def monitor_at(x: int, y: int) -> tuple[str, tuple[int, int, int, int]]:
+    """Monitor che contiene il punto (x, y): nome device + area di lavoro."""
+    user32 = ctypes.windll.user32
+    try:
+        user32.MonitorFromPoint.argtypes = [wt.POINT, wt.DWORD]
+        user32.MonitorFromPoint.restype = ctypes.c_void_p
+        user32.GetMonitorInfoW.argtypes = [ctypes.c_void_p,
+                                          ctypes.POINTER(_MONITORINFOEXW)]
+        user32.GetMonitorInfoW.restype = ctypes.c_bool
+        hmon = user32.MonitorFromPoint(wt.POINT(int(x), int(y)), 2)  # NEAREST
+        info = _MONITORINFOEXW()
+        info.cbSize = ctypes.sizeof(_MONITORINFOEXW)
+        if hmon and user32.GetMonitorInfoW(hmon, ctypes.byref(info)):
+            r = info.rcWork
+            return str(info.szDevice), (r.left, r.top, r.right, r.bottom)
+    except Exception:  # noqa: BLE001 - fallback: schermo primario
+        return "", (0, 0, ctypes.windll.user32.GetSystemMetrics(0),
+                    ctypes.windll.user32.GetSystemMetrics(1))
+    user32 = ctypes.windll.user32
+    return "", (0, 0, user32.GetSystemMetrics(0), user32.GetSystemMetrics(1))
+
+
+def cursor_pos() -> tuple[int, int]:
+    pt = wt.POINT()
+    try:
+        ctypes.windll.user32.GetCursorPos(ctypes.byref(pt))
+    except Exception:  # noqa: BLE001 - in dubbio, angolo alto a sinistra
+        return (0, 0)
+    return (pt.x, pt.y)
 
 
 def _hwnd(root: tk.Misc) -> int:
@@ -398,6 +440,12 @@ class SpotlightApp:
         self._drag_off = None
         pos = [self.root.winfo_x(), self.root.winfo_y()]
         self.cfg["window_pos"] = pos
+        # posizione distinta per ogni schermo (chiave = device del monitor)
+        device, _area = monitor_at(pos[0] + int(40 * self.scale),
+                                   pos[1] + int(10 * self.scale))
+        by_monitor = dict(self.cfg.get("window_pos_by_monitor") or {})
+        by_monitor[device] = pos
+        self.cfg["window_pos_by_monitor"] = by_monitor
         with suppress(Exception):
             save_config(self.cfg)
 
@@ -416,8 +464,33 @@ class SpotlightApp:
         self.hint_lbl.config(text="   ·   ".join(parts))
 
     # ------------------------------------------------------- visibilita'
+    # ------------------------------------------------------- posizionamento
+    def _place_window(self):
+        """Posiziona la finestra sullo schermo attivo (quello del cursore),
+        riusando l'ultima posizione salvata per *quello* schermo."""
+        cx, cy = cursor_pos()
+        device, (left, top, right, bottom) = monitor_at(cx, cy)
+        w, h = self.win_w, self.win_h
+        saved = (self.cfg.get("window_pos_by_monitor") or {}).get(device)
+        x: int | None = None
+        y: int | None = None
+        if isinstance(saved, (list, tuple)) and len(saved) == 2:
+            try:
+                sx, sy = int(saved[0]), int(saved[1])
+            except (TypeError, ValueError):
+                sx = sy = -1        # valori non validi: fuori range, si ricentra
+            if (left - 40 <= sx <= right - 120
+                    and top - 10 <= sy <= bottom - 120):
+                x, y = sx, sy
+        if x is None or y is None:
+            x = left + max(0, (right - left - w) // 2)
+            y = top + max(20, int((bottom - top) * 0.16))
+        with suppress(Exception):
+            self.root.geometry(f"{w}x{h}+{x}+{y}")
+
     def show(self):
         self._shown_at = time.time()
+        self._place_window()
         self.root.deiconify()
         self.root.lift()
         self.root.attributes("-topmost", True)

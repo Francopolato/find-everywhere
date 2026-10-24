@@ -28,6 +28,8 @@ DEFAULT_CONFIG = {
     "quit_hotkey": "ctrl+shift+q",
     # ultima posizione della finestra [x, y] (aggiornata dal drag)
     "window_pos": None,
+    # posizione distinta per ogni schermo: {"\\\\.\\DISPLAY1": [x, y]}
+    "window_pos_by_monitor": {},
     # cartelle da scansionare (anche UNC: \\server\share\cartella)
     "paths": [],
     # script personalizzati: {"name", "command", "hotkey"}
