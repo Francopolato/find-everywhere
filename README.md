@@ -114,7 +114,7 @@ Altro:
     compare solo se è attivo *Impostazioni → Cerca anche dentro il testo dei documenti*.
 
 La ricerca nel contenuto (indice di Windows) si accende e si spegne nelle
-impostazioni, sezione *Indice di Windows Search* (attiva di default), insieme a
+impostazioni, sezione *Indice di Windows Search* (**disattivata di default**), insieme a
 **«Cerca anche nel percorso»**: con il percorso attivo si trovano anche le
 cartelle che *contengono* il file cercato; **spento** la ricerca guarda solo
 l'ultimo elemento del percorso, cioè il nome del file o della cartella.
@@ -262,8 +262,8 @@ Chiavi principali del config:
   "excludes": ["$RECYCLE.BIN", "System Volume Information", ".git", "node_modules", "__pycache__", ".venv", "venv"],
   "win_search": true,
   "win_search_limit": 40,
-  "win_content_search": true,
-  "win_path_search": true,
+  "win_content_search": false,
+  "win_path_search": false,
   "index_on_startup": true,
   "live_scan": true,
   "max_results": 120,

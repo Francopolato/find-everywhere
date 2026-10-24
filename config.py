@@ -47,8 +47,8 @@ DEFAULT_CONFIG = {
     ],
     "win_search": True,          # interroga anche l'indice di Windows
     "win_search_limit": 40,
-    "win_content_search": True,  # cerca anche nel testo dei documenti indicizzati
-    "win_path_search": True,     # cerca anche nel percorso (cartelle contenitrici)
+    "win_content_search": False,  # ricerca nel testo dei documenti (off di default)
+    "win_path_search": False,     # ricerca nel percorso contenitore (off di default)
     "index_on_startup": True,    # costruisce l'indice locale all'avvio
     "live_scan": True,           # scansione "a vista" a ogni ricerca (rotellina)
     "search_links": True,        # includi i collegamenti .lnk nei risultati

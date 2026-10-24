@@ -84,9 +84,10 @@ class WindowsSearch:
         self.available: bool | None = None   # None = non ancora provato
         self.last_error: str = ""
         self.last_info: dict = {}
-        # opzioni impostabili dall'app (Impostazioni)
-        self.content_search = True   # cerca nel testo dei documenti
-        self.path_search = True      # cerca anche nel percorso contenitore
+        # opzioni impostabili dall'app (Impostazioni); di default disattivate:
+        # si cerca solo il nome di file e cartelle
+        self.content_search = False  # cerca nel testo dei documenti
+        self.path_search = False     # cerca anche nel percorso contenitore
 
     # ------------------------------------------------------------------
     def _connect(self):
