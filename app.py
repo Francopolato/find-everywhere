@@ -40,7 +40,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.17"
+VERSION = "1.18"
 
 
 def log(msg: str) -> None:
@@ -243,7 +243,7 @@ class SpotlightApp:
         self._tick_count = 0
         self.win_info: dict = {}
         self.filter = self.cfg.get("filter", "all")
-        if self.filter not in ("all", "files", "dirs"):
+        if self.filter not in self._filter_modes():
             self.filter = "all"
         self.view: list[dict] = []
         self.source_colors = {
@@ -704,8 +704,15 @@ class SpotlightApp:
 
     # ------------------------------------------------------- rendering
     # ------------------------------------------------------- filtro risultati
-    FILTERS = ("all", "files", "dirs")
-    FILTER_LABEL = {"all": "Tutti", "files": "Solo file", "dirs": "Solo cartelle"}
+    FILTER_LABEL = {"all": "Tutti", "files": "Solo file",
+                    "dirs": "Solo cartelle", "text": "Solo testo"}
+
+    def _filter_modes(self) -> tuple[str, ...]:
+        """Filtri disponibili: «Solo testo» solo se la ricerca nel contenuto è attiva."""
+        modes = ["all", "files", "dirs"]
+        if self.cfg.get("win_content_search", True):
+            modes.append("text")
+        return tuple(modes)
 
     def _filter_text(self) -> str:
         return self.FILTER_LABEL.get(self.filter, "Tutti")
@@ -715,11 +722,12 @@ class SpotlightApp:
         return "break"
 
     def _cycle_filter(self):
+        modes = self._filter_modes()
         try:
-            i = self.FILTERS.index(self.filter)
+            i = modes.index(self.filter)
         except ValueError:
-            i = 0
-        self.filter = self.FILTERS[(i + 1) % len(self.FILTERS)]
+            i = -1
+        self.filter = modes[(i + 1) % len(modes)]
         self.cfg["filter"] = self.filter
         with suppress(Exception):
             save_config(self.cfg)
@@ -732,13 +740,34 @@ class SpotlightApp:
         self.set_status(f"Filtro: {self._filter_text()} "
                         f"({len(self.view)} di {len(self.results)})", "accent")
 
+    def refresh_filter(self):
+        """Riallinea il filtro dopo un cambio di impostazioni."""
+        if self.filter not in self._filter_modes():
+            self.filter = "all"
+            self.cfg["filter"] = "all"
+        with suppress(Exception):
+            self.filter_lbl.config(text=self._filter_text())
+        self._apply_filter()
+        self.sel = 0
+        self.offset = 0
+        self._render()
+
     def _apply_filter(self):
-        if self.filter == "files":
-            self.view = [r for r in self.results if not r.get("is_dir")]
-        elif self.filter == "dirs":
+        mode = self.filter
+        if mode not in self._filter_modes():
+            mode = "all"
+        if mode == "files":
+            # solo nomi di file: esclude le cartelle e i match trovati nel testo
+            self.view = [r for r in self.results
+                         if not r.get("is_dir") and r.get("match") != "testo"]
+        elif mode == "dirs":
             self.view = [r for r in self.results if r.get("is_dir")]
+        elif mode == "text":
+            self.view = [r for r in self.results if r.get("match") == "testo"]
         else:
             self.view = list(self.results)
+        if self.sel >= len(self.view):
+            self.sel = max(0, len(self.view) - 1)
         if self.sel >= len(self.view):
             self.sel = max(0, len(self.view) - 1)
 
@@ -1287,6 +1316,10 @@ class SettingsWindow(tk.Toplevel):
         box3 = self._section("Indice di Windows Search")
         self.var_win = tk.BooleanVar(value=bool(self.cfg.get("win_search", True)))
         self._check(box3, "Cerca anche nell'indice di Windows", self.var_win)
+        self.var_content = tk.BooleanVar(
+            value=bool(self.cfg.get("win_content_search", True)))
+        self._check(box3, "Cerca anche dentro il testo dei documenti (più lento, "
+                         "abilita il filtro «Solo testo»)", self.var_content)
 
         # ------- script -------
         box4 = self._section("Script personalizzati (percorso = argomento)")
@@ -1711,6 +1744,7 @@ class SettingsWindow(tk.Toplevel):
         new["index_on_startup"] = bool(self.var_index.get())
         new["live_scan"] = bool(self.var_live.get())
         new["win_search"] = bool(self.var_win.get())
+        new["win_content_search"] = bool(self.var_content.get())
         new["excludes"] = [e for e in self.cfg["excludes"] if e]
         new["search_links"] = bool(self.var_links.get())
         kinds = {}
@@ -1724,6 +1758,7 @@ class SettingsWindow(tk.Toplevel):
         save_config(new)
         self.app.cfg = load_config()
         self.app._rebuild_root_kinds()
+        self.app.refresh_filter()
 
         self.grab_release()
         self.destroy()

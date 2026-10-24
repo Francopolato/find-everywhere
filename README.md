@@ -104,7 +104,17 @@ Altro:
 * **nomi lunghi**: troncati con `…` **prima dell'estensione**
   (`contratto quadro molto lungo … 2….pdf`), così il tipo di file resta leggibile;
 * **filtro**: in alto a destra il pulsante `Tutti` / `Solo file` / `Solo cartelle`
-  (anche `Ctrl+T`); la scelta è **persistente**, anche dopo il riavvio;
+  (anche `Ctrl+T`); la scelta è **persistente**, anche dopo il riavvio. Significato:
+  * `Tutti` — file e cartelle, per nome; in più le corrispondenze nel **testo**
+    se la ricerca nel contenuto è attiva;
+  * `Solo file` — **solo il nome dei file** (esclude cartelle e match nel testo),
+    indipendentemente dal toggle;
+  * `Solo cartelle` — solo cartelle (mai ricerca nel testo);
+  * `Solo testo` — solo corrispondenze dentro il contenuto dei documenti;
+    compare solo se è attivo *Impostazioni → Cerca anche dentro il testo dei documenti*.
+
+La ricerca nel contenuto (indice di Windows) si accende e si spegne nelle
+impostazioni, sezione *Indice di Windows Search*, ed è **attiva di default**;
 * **collegamenti**: inclusi nei risultati per default (`.lnk`),
   disattivabili da Impostazioni → *Mostra anche i collegamenti*.
 
@@ -147,7 +157,7 @@ Come viene applicato:
 | `Ctrl+Shift+E` (solo a finestra aperta) | apre la **cartella che contiene** l'elemento, con l'elemento selezionato |
 | `Ctrl+Invio` | come sopra (alias) |
 | `↑` / `↓`, rotellina | naviga i risultati |
-| `Ctrl+T` (o click su `Tutti`) | filtro: Tutti → Solo file → Solo cartelle |
+| `Ctrl+T` (o click su `Tutti`) | filtro: Tutti → Solo file → Solo cartelle → **Solo testo** (quest'ultimo solo se la ricerca nel contenuto è attiva) |
 | `Ctrl+,` o ⚙ | impostazioni |
 | `Esc` | chiude la finestra |
 | `Ctrl+Shift+Q` | **esce dal processo** (deregistra le hotkey) |
@@ -249,6 +259,7 @@ Chiavi principali del config:
   "excludes": ["$RECYCLE.BIN", "System Volume Information", ".git", "node_modules", "__pycache__", ".venv", "venv"],
   "win_search": true,
   "win_search_limit": 40,
+  "win_content_search": true,
   "index_on_startup": true,
   "live_scan": true,
   "max_results": 120,
