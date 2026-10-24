@@ -12,7 +12,7 @@ Ctrl+Alt+Spazio  ->  apre la finestra (chiudi con Esc). Configurabile o disabili
 ## Novità
 
 L'elenco completo delle modifiche è in **[CHANGELOG.md](CHANGELOG.md)**.
-In sintesi, le novità recenti (v1.15 → v1.26):
+In sintesi, le novità recenti (v1.15 → v1.28):
 
 * default: ricerca **solo per nome** (testo dei documenti e percorso disattivati);
 * **icone per tipo** (📁 / 📄 / `📁↗` per i collegamenti `.lnk`) e **colore per
@@ -28,7 +28,12 @@ In sintesi, le novità recenti (v1.15 → v1.26):
 * **«Apri in Explorer»** al posto di «Apri cartella contenitrice»;
 * per **ogni script** l'opzione *«resta aperta in secondo piano»*;
 * riaprendo lo Spotlight tornano l'ultima ricerca **e l'ultimo elemento
-  selezionato**.
+  selezionato**;
+* **indice ripulito a fine scansione**: spostamenti e cancellazioni vengono
+  recepiti già durante una ricerca (saltato se la scansione è interrotta o se una
+  cartella risulta illeggibile);
+* **aggiornamento periodico opzionale** dell'indice: *«Aggiorna l'indice in
+  background ogni N minuti»* (0 = mai, minimo 5), solo con l'app inattiva.
 
 ## Installazione
 
