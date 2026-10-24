@@ -4,6 +4,15 @@ Modifiche rilevanti a **find-everywhere**, dalla più recente. Le versioni
 corrispondono ai tag git (`vX.Y`); le note complete di ogni release sono nella
 pagina [Releases](https://github.com/Francopolato/find-everywhere/releases).
 
+## v1.23 — script in secondo piano e selezione ricordata
+
+- nuovo toggle **«Lanciando uno script la finestra resta aperta in secondo
+  piano»**: con l'opzione attiva la finestra non si nasconde, va dietro alle
+  altre finestre (e il "nascondi alla perdita di focus" non la chiude);
+- riaprendo lo Spotlight, oltre all'ultima ricerca torna selezionato **l'ultimo
+  elemento** scelto prima della chiusura;
+- la selezione non viene più azzerata quando il filtro corrente non ha risultati.
+
 ## v1.22 — default: solo ricerca per nome
 
 - `win_content_search` e `win_path_search` **disattivati di default**: una

@@ -267,6 +267,12 @@ Nelle impostazioni: **Nuovo** aggiunge una riga `+ nuovo (da compilare)`
 nell'elenco, poi compili Nome / Comando / Hotkey e premi **Salva script**
 (infine **Salva** per scrivere il config).
 
+Con l'opzione **«Lanciando uno script la finestra resta aperta in secondo piano»**
+(Impostazioni, in alto) la finestra non si nasconde quando parte lo script: va
+dietro alle altre finestre e resta a portata di mano; senza l'opzione si chiude
+come sempre. Riaprendo lo Spotlight tornano sia l'ultima ricerca sia **l'ultimo
+elemento selezionato**.
+
 Gli script configurati compaiono anche nel **menu del tasto destro** su un
 risultato, con il nome scelto e la hotkey accanto (`Apri con Peek  [CTRL+ALT+1]`);
 se sono più di tre finiscono nel sottomenu `Script (N)`. Senza script il menu
@@ -295,7 +301,8 @@ Chiavi principali del config:
   "index_on_startup": true,
   "live_scan": true,
   "max_results": 120,
-  "hide_on_focus_loss": true
+  "hide_on_focus_loss": true,
+  "script_keep_open": false
 }
 ```
 

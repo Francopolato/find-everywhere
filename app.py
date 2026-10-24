@@ -41,7 +41,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.22"
+VERSION = "1.23"
 
 
 def log(msg: str) -> None:
@@ -282,6 +282,7 @@ class SpotlightApp:
         self._settings_open = False
         self._tmp_indexer = None
         self._quitting = False
+        self._suppress_hide = False
         self._tick_count = 0
         self.win_info: dict = {}
         self.filter = self.cfg.get("filter", "all")
@@ -490,6 +491,7 @@ class SpotlightApp:
 
     def show(self):
         self._shown_at = time.time()
+        self._suppress_hide = False
         self._place_window()
         self.root.deiconify()
         self.root.lift()
@@ -501,8 +503,18 @@ class SpotlightApp:
         if hwnd and _foreground() != hwnd:
             with suppress(Exception):
                 ctypes.windll.user32.SetForegroundWindow(hwnd)
-        if not self.results:
-            self._render()
+        # ridisegna sempre: cosi' torna selezionato l'ultimo elemento scelto
+        if self.view and self.sel >= len(self.view):
+            self.sel = len(self.view) - 1
+        self._render()
+
+    def to_back(self):
+        """Manda la finestra in secondo piano senza chiuderla."""
+        with suppress(Exception):
+            self.root.attributes("-topmost", False)
+        self._suppress_hide = True
+        with suppress(Exception):
+            self.root.lower()
 
     def hide(self):
         if self._settings_open:
@@ -562,7 +574,7 @@ class SpotlightApp:
     def _maybe_hide(self):
         """Nasconde solo se il focus e' andato davvero a un'altra finestra:
         evita che la finestra sparisca subito dopo essere stata aperta."""
-        if self._settings_open:
+        if self._settings_open or self._suppress_hide:
             return
         if self.root.state() == "withdrawn":
             return
@@ -847,10 +859,8 @@ class SpotlightApp:
             self.view = [r for r in self.results if r.get("match") == "testo"]
         else:
             self.view = list(self.results)
-        if self.sel >= len(self.view):
-            self.sel = max(0, len(self.view) - 1)
-        if self.sel >= len(self.view):
-            self.sel = max(0, len(self.view) - 1)
+        if self.view and self.sel >= len(self.view):
+            self.sel = len(self.view) - 1
 
     # ------------------------------------------------------- rendering
     def _fit_name(self, item) -> str:
@@ -1068,7 +1078,11 @@ class SpotlightApp:
             cmdline = cmd.replace("%path%", path)
         else:
             cmdline = f"{cmd} {quoted}"
-        self.hide()
+        if self.cfg.get("script_keep_open"):
+            # toggle attivo: la finestra resta aperta, dietro le altre
+            self.to_back()
+        else:
+            self.hide()
         try:
             log(f"script {script.get('name')!r}: {cmdline}")
             launch(cmdline)
@@ -1330,6 +1344,10 @@ class SettingsWindow(tk.Toplevel):
         self.var_focus = tk.BooleanVar(value=bool(self.cfg.get("hide_on_focus_loss", True)))
         self._check(box1, "Nascondi quando la finestra perde il focus",
                     self.var_focus)
+        self.var_keep = tk.BooleanVar(
+            value=bool(self.cfg.get("script_keep_open", False)))
+        self._check(box1, "Lanciando uno script la finestra resta aperta in "
+                          "secondo piano", self.var_keep)
 
         # ------- cartelle personalizzate -------
         box2 = self._section("Cartelle personalizzate (anche di rete: \\\\server\\share)")
@@ -1844,6 +1862,7 @@ class SettingsWindow(tk.Toplevel):
                 kind = "net" if indexscope.is_network(path) else "excl"
             kinds[key] = kind
         new["path_kinds"] = kinds
+        new["script_keep_open"] = bool(self.var_keep.get())
         save_config(new)
         self.app.cfg = load_config()
         self.app._rebuild_root_kinds()
