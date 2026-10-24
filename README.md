@@ -72,11 +72,11 @@ file cancellati vengono rimosse).
 | 📁↗ / 📄↗ | **collegamento** (`.lnk`) che punta a una cartella / a un file; a destra si vede la destinazione (`→ C:\...`) |
 
 | colore dell'icona | fonte |
-|---|---|
+| --- | --- |
 | blu | indice di Windows Search |
-| verde | indice locale SQLite |
 | ambra | cartella **personale di rete** (scansione dello share) |
 | viola | cartella **esclusa dall'indice di Windows**, aggiunta a mano e confermata |
+| grigio | voce rimasta nell'indice di una cartella poi rimossa (raro) |
 
 La stessa legenda è ripetuta nelle **impostazioni**, sezione *Cartelle personalizzate*.
 

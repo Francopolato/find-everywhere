@@ -40,7 +40,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.16"
+VERSION = "1.17"
 
 
 def log(msg: str) -> None:
@@ -248,7 +248,7 @@ class SpotlightApp:
         self.view: list[dict] = []
         self.source_colors = {
             "pc": C["accent"],        # indice di Windows Search (blu)
-            "index": "#5fbf7f",       # indice locale generico (verde)
+            "index": C["dim"],        # voce orfana dell'indice locale (grigio)
             "net": C["warn"],         # cartelle personalizzate di rete (ambra)
             "excl": "#a78bfa",        # cartelle escluse dall'indice di Windows (viola)
         }
@@ -1242,9 +1242,9 @@ class SettingsWindow(tk.Toplevel):
                                          sticky="w", pady=(0, 2))
         legend = (
             (C["accent"], "indice di Windows Search"),
-            ("#5fbf7f", "indice locale dell'app"),
             (C["warn"], "cartelle personalizzate di rete"),
             ("#a78bfa", "cartelle escluse dall'indice di Windows (confermate)"),
+            (C["dim"], "voce rimasta nell'indice di una cartella rimossa"),
         )
         for row, (color, label) in enumerate(legend, start=1):
             tk.Label(leg, text="   ", bg=color, bd=0).grid(row=row, column=0,
