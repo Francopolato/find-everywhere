@@ -40,7 +40,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.19"
+VERSION = "1.20"
 
 
 def log(msg: str) -> None:
@@ -747,6 +747,9 @@ class SpotlightApp:
 
     def refresh_filter(self):
         """Riallinea il filtro dopo un cambio di impostazioni."""
+        if not self.cfg.get("win_content_search", True):
+            # il toggle del testo e' stato spento: via i match gia' in lista
+            self.results = [r for r in self.results if r.get("match") != "testo"]
         if self.filter not in self._filter_modes():
             self.filter = "all"
             self.cfg["filter"] = "all"
@@ -1113,6 +1116,9 @@ class SpotlightApp:
                 return
             self.busy_win = False
             self.win_info = info
+            if not self.winsearch.content_search:
+                # niente corrispondenze nel testo se il toggle e' spento
+                items = [i for i in items if i.get("match") != "testo"]
             log(f"ricerca {q!r}: windows={len(items)} "
                 f"[{' '.join(info.get('strategies') or [])}] "
                 f"errore={info.get('error')}")
