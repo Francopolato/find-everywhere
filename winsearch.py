@@ -31,6 +31,10 @@ _SQL_TEMPLATE = (
 )
 
 
+# Strategie: nome dell'elemento, percorso contenitore (opzionale), contenuto (opzionale).
+_STRATEGY_ORDER = ("nome", "percorso", "testo")
+
+
 def build_sql(limit: int, condition: str) -> str:
     sql = _SQL_TEMPLATE.replace("@@LIMIT@@", str(int(limit)))
     return sql.replace("@@WHERE@@", condition)
@@ -80,6 +84,9 @@ class WindowsSearch:
         self.available: bool | None = None   # None = non ancora provato
         self.last_error: str = ""
         self.last_info: dict = {}
+        # opzioni impostabili dall'app (Impostazioni)
+        self.content_search = True   # cerca nel testo dei documenti
+        self.path_search = True      # cerca anche nel percorso contenitore
 
     # ------------------------------------------------------------------
     def _connect(self):
@@ -110,9 +117,12 @@ class WindowsSearch:
         return not ("://" in low or low.startswith(("mapi:", "outlook:")))
 
     # ------------------------------------------------------------------
-    def search(self, query: str, limit: int = 40,
-               content: bool = True) -> tuple[list[dict], dict]:
-        """Ritorna (risultati, info). info raccoglie diagnosi per la UI/log."""
+    def search(self, query: str, limit: int = 40) -> tuple[list[dict], dict]:
+        """Ritorna (risultati, info). info raccoglie diagnosi per la UI/log.
+
+        Le opzioni `content_search` e `path_search` stanno sull'istanza e si
+        impostano dalle Impostazioni: cosi' il chiamante non deve conoscerle.
+        """
         q = (query or "").strip()
         info: dict = {"strategies": [], "error": None, "count": 0}
         terms = query_terms(q)
@@ -129,8 +139,11 @@ class WindowsSearch:
             # piu' termini: CONTAINS con prefissi di parola. Il LIKE multi-termine
             # (`%a%b%`) costa 12+ secondi, quindi non si usa.
             strategies.append(("nome", contains_condition("System.FileName", terms)))
-        strategies.append(("percorso", contains_condition("System.ItemPathDisplay", terms)))
-        if content:
+        if self.path_search:
+            # cerca anche nelle cartelle che *contengono* l'elemento
+            strategies.append(("percorso",
+                               contains_condition("System.ItemPathDisplay", terms)))
+        if self.content_search:
             strategies.append(("testo", freetext_condition(search_terms(q))))
 
         items: list[dict] = []

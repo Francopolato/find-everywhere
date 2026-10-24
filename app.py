@@ -40,7 +40,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.18"
+VERSION = "1.19"
 
 
 def log(msg: str) -> None:
@@ -254,6 +254,7 @@ class SpotlightApp:
         }
         self.root_kinds: dict[str, str] = {}
         self._rebuild_root_kinds()
+        self._sync_winsearch_flags()
 
         self.scale = _dpi_scale()
         self._build_ui()
@@ -613,13 +614,17 @@ class SpotlightApp:
         else:
             self.busy_scan = False
 
+    def _sync_winsearch_flags(self):
+        """Passa le opzioni delle Impostazioni all'istanza di WindowsSearch."""
+        self.winsearch.content_search = bool(
+            self.cfg.get("win_content_search", True))
+        self.winsearch.path_search = bool(
+            self.cfg.get("win_path_search", True))
+
     def _win_bg(self, q):
         try:
             items, info = self.winsearch.search(
-                q,
-                limit=self.cfg.get("win_search_limit", 40),
-                content=bool(self.cfg.get("win_content_search", True)),
-            )
+                q, limit=self.cfg.get("win_search_limit", 40))
         except Exception as exc:  # noqa: BLE001 - se Windows Search fallisce si prosegue
             items = []
             info = {"strategies": [], "count": 0,
@@ -1320,6 +1325,10 @@ class SettingsWindow(tk.Toplevel):
             value=bool(self.cfg.get("win_content_search", True)))
         self._check(box3, "Cerca anche dentro il testo dei documenti (più lento, "
                          "abilita il filtro «Solo testo»)", self.var_content)
+        self.var_path = tk.BooleanVar(
+            value=bool(self.cfg.get("win_path_search", True)))
+        self._check(box3, "Cerca anche nel percorso (cartelle che contengono il "
+                         "file); spento = solo il nome dell'elemento", self.var_path)
 
         # ------- script -------
         box4 = self._section("Script personalizzati (percorso = argomento)")
@@ -1745,6 +1754,7 @@ class SettingsWindow(tk.Toplevel):
         new["live_scan"] = bool(self.var_live.get())
         new["win_search"] = bool(self.var_win.get())
         new["win_content_search"] = bool(self.var_content.get())
+        new["win_path_search"] = bool(self.var_path.get())
         new["excludes"] = [e for e in self.cfg["excludes"] if e]
         new["search_links"] = bool(self.var_links.get())
         kinds = {}
@@ -1758,6 +1768,7 @@ class SettingsWindow(tk.Toplevel):
         save_config(new)
         self.app.cfg = load_config()
         self.app._rebuild_root_kinds()
+        self.app._sync_winsearch_flags()
         self.app.refresh_filter()
 
         self.grab_release()
