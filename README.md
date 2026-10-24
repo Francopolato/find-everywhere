@@ -9,6 +9,23 @@ Ctrl+Alt+Spazio  ->  apre la finestra (chiudi con Esc). Configurabile o disabili
                     impostazioni -> hotkey principale -> "Nessuna" (campo vuoto).
 ```
 
+## Novità
+
+L'elenco completo delle modifiche è in **[CHANGELOG.md](CHANGELOG.md)**.
+In sintesi, dall'ultima release pubblicata (v1.14):
+
+* default: ricerca **solo per nome** (testo dei documenti e percorso disattivati);
+* **icone per tipo** (📁 / 📄 / `📁↗` per i collegamenti `.lnk`) e **colore per
+  provenienza** (indice di Windows, rete, cartelle escluse dall'indice);
+* **cartelle personalizzate** con controllo sull'indice di Windows: errore se la
+  cartella è già indicizzata, avviso se ne è esclusa;
+* filtri `Tutti / Solo file / Solo cartelle / Solo testo` (`Ctrl+T`);
+* la finestra si apre sullo **schermo attivo** e ricorda la posizione **per ogni
+  monitor**;
+* **aggiornamenti** dalle impostazioni (`git pull` da sorgente, download del nuovo
+  eseguibile se compilato);
+* ricerca a metà parola più completa (`*menti` trova `investimenti`).
+
 ## Installazione
 
 Due modi, il risultato è lo stesso. Requisiti: Windows 10/11.
