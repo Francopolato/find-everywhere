@@ -4,6 +4,12 @@ Modifiche rilevanti a **find-everywhere**, dalla più recente. Le versioni
 corrispondono ai tag git (`vX.Y`); le note complete di ogni release sono nella
 pagina [Releases](https://github.com/Francopolato/find-everywhere/releases).
 
+## v1.26 — «Apri in Explorer»
+
+- voce del menu contestuale e legenda rinominate: **«Apri in Explorer»** invece di
+  «Apri cartella contenitrice» (stessa funzione: apre la cartella con l'elemento
+  selezionato).
+
 ## v1.25 — Impostazioni sullo schermo dello Spotlight
 
 - la finestra delle impostazioni si apre **sullo stesso monitor** in cui si trova

@@ -177,7 +177,7 @@ Come viene applicato:
 | tasto | azione |
 |---|---|
 | `Invio` / click | apre l'elemento selezionato: file con l'app associata, **cartella** in Esplora file |
-| `Ctrl+Shift+E` (solo a finestra aperta) | apre la **cartella che contiene** l'elemento, con l'elemento selezionato |
+| `Ctrl+Shift+E` (solo a finestra aperta) | apre l'elemento **in Explorer** (la cartella che lo contiene, con l'elemento selezionato) |
 | `Ctrl+Invio` | come sopra (alias) |
 | `↑` / `↓`, rotellina | naviga i risultati |
 | `Ctrl+T` (o click su `Tutti`) | filtro: Tutti → Solo file → Solo cartelle → **Solo testo** (quest'ultimo solo se la ricerca nel contenuto è attiva) |
@@ -201,11 +201,11 @@ Note sull'hotkey principale: si sceglie liberamente nelle impostazioni
 (clicca il campo e premi la combinazione) oppure si disabilita con "Nessuna":
 con il campo vuoto **non viene registrata nessuna hotkey globale** e la finestra
 si apre solo dal bat/exe (doppio clic). `Ctrl+Shift+E` è riservato all'azione
-"apri la cartella contenitrice" e non è accettato come hotkey globale.
+"apri in Explorer" e non è accettato come hotkey globale.
 
 I risultati includono **sia file sia cartelle** (icona 📁 per le cartelle).
 
-Click destro su un risultato: Apri / Apri cartella / Copia percorso / script.
+Click destro su un risultato: Apri / Apri in Explorer / Copia percorso / script.
 
 ## Script personalizzati
 

@@ -41,7 +41,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.25"
+VERSION = "1.26"
 
 
 def log(msg: str) -> None:
@@ -451,7 +451,7 @@ class SpotlightApp:
             save_config(self.cfg)
 
     def _update_hints(self):
-        parts = ["Invio / click: apri", "Ctrl+Shift+E: cartella contenitrice",
+        parts = ["Invio / click: apri", "Ctrl+Shift+E: apri in Explorer",
                  "↑↓: naviga", "Ctrl+T: filtro", "Esc: chiudi",
                  "Ctrl+,: impostazioni"]
         for s in self.cfg.get("scripts", []):
@@ -1102,7 +1102,7 @@ class SpotlightApp:
                     activebackground=C["accent"], activeforeground="#fff",
                     bd=0)
         m.add_command(label="Apri", command=lambda: self._activate(False))
-        m.add_command(label="Apri cartella contenitrice",
+        m.add_command(label="Apri in Explorer",
                       command=lambda: self._activate(True))
         m.add_command(label="Copia percorso", command=lambda: self._copy_path(path))
         m.add_separator()
