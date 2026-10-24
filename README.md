@@ -194,7 +194,8 @@ viene salvata nel config e ripristinata al riavvio.
 cursore) e ricorda **una posizione distinta per ogni monitor**
 (`window_pos_by_monitor`); se la posizione salvata non è più valida (layout
 cambiato) viene ricentrata. L'area usata è quella di lavoro, quindi non finisce
-sotto la barra delle applicazioni.
+sotto la barra delle applicazioni. Anche la finestra **Impostazioni** si apre
+sullo stesso schermo dello Spotlight, centrata.
 
 Note sull'hotkey principale: si sceglie liberamente nelle impostazioni
 (clicca il campo e premi la combinazione) oppure si disabilita con "Nessuna":

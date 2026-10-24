@@ -41,7 +41,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.24"
+VERSION = "1.25"
 
 
 def log(msg: str) -> None:
@@ -1291,11 +1291,17 @@ class SettingsWindow(tk.Toplevel):
 
         self.title(f"SpotlightPy {VERSION} — Impostazioni")
         self.configure(bg=C["bg"])
-        sw = self.winfo_screenwidth()
-        sh = self.winfo_screenheight()
-        w = min(int(680 * app.scale), sw - 60)
-        h = min(int(760 * app.scale), sh - 90)
-        self.geometry(f"{w}x{h}")
+        # sullo stesso schermo dello Spotlight, centrata nell'area di lavoro
+        cx = app.root.winfo_x() + max(1, app.win_w) // 2
+        cy = app.root.winfo_y() + max(1, app.win_h) // 2
+        _device, (mon_left, mon_top, mon_right, mon_bottom) = monitor_at(cx, cy)
+        avail_w = max(320, mon_right - mon_left)
+        avail_h = max(320, mon_bottom - mon_top)
+        w = min(int(680 * app.scale), avail_w - 60)
+        h = min(int(760 * app.scale), avail_h - 90)
+        x = mon_left + max(0, (avail_w - w) // 2)
+        y = mon_top + max(0, (avail_h - h) // 2)
+        self.geometry(f"{w}x{h}+{x}+{y}")
         self.attributes("-topmost", True)
         self.resizable(True, True)
         self.protocol("WM_DELETE_WINDOW", self._cancel)

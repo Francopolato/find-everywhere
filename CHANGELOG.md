@@ -4,6 +4,11 @@ Modifiche rilevanti a **find-everywhere**, dalla più recente. Le versioni
 corrispondono ai tag git (`vX.Y`); le note complete di ogni release sono nella
 pagina [Releases](https://github.com/Francopolato/find-everywhere/releases).
 
+## v1.25 — Impostazioni sullo schermo dello Spotlight
+
+- la finestra delle impostazioni si apre **sullo stesso monitor** in cui si trova
+  lo Spotlight (centrata nell'area di lavoro), non più sullo schermo primario.
+
 ## v1.24 — «resta in secondo piano» per singolo script
 
 - l'opzione non è più globale: **ogni script** ha la sua casella *«Lanciando
