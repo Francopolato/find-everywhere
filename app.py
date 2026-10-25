@@ -41,7 +41,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.28"
+VERSION = "1.29"
 
 
 def log(msg: str) -> None:
@@ -681,7 +681,9 @@ class SpotlightApp:
             return
 
         # 1) risultati istantanei dall'indice locale (gia' scansionato)
-        self._merge(self.db.search(q, limit=self.cfg.get("max_results", 120)), "index")
+        maxr = self.cfg.get("max_results", 120)
+        db_limit = maxr if isinstance(maxr, int) and maxr > 0 else 100000
+        self._merge(self.db.search(q, limit=db_limit), "index")
         self._render()
 
         # 2) indice di Windows (thread separato; con i jolly puo' richiedere
@@ -757,6 +759,15 @@ class SpotlightApp:
                 continue
             if not links_on and is_link(path):
                 continue
+            if is_link(path):
+                # un .lnk che punta a una cartella va trattato come cartella
+                # (filtri «Solo cartelle» / «Solo file» e icona)
+                info = link_describe(path)
+                it["is_link"] = True
+                it["link_target"] = info.get("link_target", "")
+                it["link_is_dir"] = bool(info.get("link_is_dir"))
+                if it["link_is_dir"]:
+                    it["is_dir"] = True
             # i risultati dell'indice locale / della scansione prendono il colore
             # della cartella personalizzata da cui provengono
             if it.get("source") in (None, "index", "net"):
@@ -786,7 +797,7 @@ class SpotlightApp:
 
         self.results.sort(key=score)
         maxr = self.cfg.get("max_results", 120)
-        if len(self.results) > maxr:
+        if isinstance(maxr, int) and maxr > 0 and len(self.results) > maxr:
             dropped = self.results[maxr:]
             self.results = self.results[:maxr]
             for it in dropped:
@@ -1438,6 +1449,17 @@ class SettingsWindow(tk.Toplevel):
         tk.Label(row_ref, text="minuti (0 = mai, minimo 5) — parte solo con l'app "
                               "inattiva", bg=C["bg2"], fg=C["dim"],
                  font=self.f_small).pack(side="left")
+        row_max = tk.Frame(box2, bg=C["bg2"])
+        row_max.pack(fill="x", padx=10, pady=(0, 6))
+        tk.Label(row_max, text="Risultati massimi nella ricerca",
+                 bg=C["bg2"], fg=C["dim"], font=self.f_small).pack(side="left")
+        self.ent_max = tk.Entry(row_max, width=6, bg=C["bg3"], fg=C["fg"],
+                                insertbackground=C["fg"], relief="flat",
+                                font=self.f_small, justify="center")
+        self.ent_max.pack(side="left", padx=6)
+        self.ent_max.insert(0, str(self.cfg.get("max_results", 120)))
+        tk.Label(row_max, text="(0 = illimitati)", bg=C["bg2"], fg=C["dim"],
+                 font=self.f_small).pack(side="left")
 
         # ------- esclusioni -------
         box5 = self._section("Esclusioni (cartelle ignorate dalla scansione)")
@@ -1928,6 +1950,11 @@ class SettingsWindow(tk.Toplevel):
         if 0 < minutes < 5:
             minutes = 5          # intervallo minimo: non martellare la rete
         new["refresh_minutes"] = minutes
+        try:
+            maxr = int(str(self.ent_max.get()).strip() or 0)
+        except (TypeError, ValueError):
+            maxr = 120
+        new["max_results"] = max(0, maxr)
         save_config(new)
         self.app.cfg = load_config()
         self.app._rebuild_root_kinds()

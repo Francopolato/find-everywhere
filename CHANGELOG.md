@@ -4,6 +4,14 @@ Modifiche rilevanti a **find-everywhere**, dalla più recente. Le versioni
 corrispondono ai tag git (`vX.Y`); le note complete di ogni release sono nella
 pagina [Releases](https://github.com/Francopolato/find-everywhere/releases).
 
+## v1.29 — limite risultati e tipo dei collegamenti
+
+- in Impostazioni: **«Risultati massimi nella ricerca»**, `0` = **illimitati**
+  (default 120);
+- i collegamenti `.lnk` che puntano a una **cartella** ora sono trattati come
+  cartelle (compaiono in `Solo cartelle` e `Tutti`), quelli che puntano a un file
+  come file (`Solo file` e `Tutti`).
+
 ## v1.28 — aggiornamento periodico opzionale dell'indice
 
 - nuovo campo in Impostazioni (Cartelle personalizzate): **«Aggiorna l'indice in

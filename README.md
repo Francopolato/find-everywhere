@@ -80,6 +80,10 @@ che parte solo con l'app inattiva da 20 secondi.
 | 📄 | file |
 | 📁↗ / 📄↗ | **collegamento** (`.lnk`) che punta a una cartella / a un file; a destra si vede la destinazione (`→ C:\...`) |
 
+Un `.lnk` che punta a una cartella viene trattato come **cartella** (compare in
+`Solo cartelle` e in `Tutti`), uno che punta a un file come **file** (`Solo file`
+e `Tutti`).
+
 | colore dell'icona | fonte |
 | --- | --- |
 | blu | indice di Windows Search |
@@ -321,6 +325,9 @@ Note:
 esclusioni valgono anche per l'indice già esistente.
 * L'indice cresce: per un indice pulito usa **Ricostruisci indice** nelle
   impostazioni.
+* **Risultati massimi** (`max_results`): si imposta nelle impostazioni; `0` =
+  **illimitati**. Limita la lista mostrata (le query interne restano comunque
+  limitate per non rallentare).
 
 ## Avvio automatico (un solo bat, universale)
 
