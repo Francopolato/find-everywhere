@@ -82,8 +82,9 @@ che parte solo con l'app inattiva da 20 secondi.
 
 Un `.lnk` che punta a una cartella viene trattato come **cartella** (compare in
 `Solo cartelle` e in `Tutti`), uno che punta a un file come **file** (`Solo file`
-e `Tutti`). Se la destinazione non è raggiungibile (share di rete offline) si usa
-l'euristica "l'ultimo elemento del percorso non ha estensione" → cartella.
+e `Tutti`). Se il target **esiste** decide il filesystem (un file senza estensione
+resta un file); solo se è **irraggiungibile** (share offline) si usa l'euristica
+"l'ultimo elemento del percorso non ha estensione" → cartella.
 
 | colore dell'icona | fonte |
 | --- | --- |

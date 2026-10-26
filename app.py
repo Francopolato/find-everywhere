@@ -41,7 +41,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.31"
+VERSION = "1.32"
 
 
 def log(msg: str) -> None:
@@ -2141,4 +2141,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 

@@ -4,6 +4,15 @@ Modifiche rilevanti a **find-everywhere**, dalla più recente. Le versioni
 corrispondono ai tag git (`vX.Y`); le note complete di ogni release sono nella
 pagina [Releases](https://github.com/Francopolato/find-everywhere/releases).
 
+## v1.32 — classificazione dei collegamenti: il filesystem ha la precedenza
+
+- un solo `stat` sul target: se **esiste** è il filesystem a dire se è cartella o
+  file (quindi un file **senza estensione** non viene più scambiato per cartella);
+- l'euristica "niente estensione = cartella" si applica **solo** quando il target
+  è irraggiungibile (share offline, unità scollegata, percorso inesistente);
+- corretta l'asimmetria precedente, che su `OSError` tornava "file" senza
+  provare l'euristica.
+
 ## v1.31 — percorso spento ovunque e collegamenti a cartelle più affidabili
 
 - con **«Cerca anche nel percorso» spento** anche l'**indice locale** non fa più
@@ -121,10 +130,10 @@ pagina [Releases](https://github.com/Francopolato/find-everywhere/releases).
 
 - sezione rinominata **Cartelle personalizzate** (non più «cartelle di rete»);
 - aggiungendo una cartella, con l'indice di Windows attivo:
-  * **già coperta dall'indice** → errore: va prima disattivata la ricerca
+  - **già coperta dall'indice** → errore: va prima disattivata la ricerca
     nell'indice (eviterebbe risultati duplicati);
-  * **esclusa / non indicizzata** → avviso con conferma (colore viola);
-  * **di rete** → aggiunta diretta (colore ambra);
+  - **esclusa / non indicizzata** → avviso con conferma (colore viola);
+  - **di rete** → aggiunta diretta (colore ambra);
 - il controllo usa le regole reali di indicizzazione (`CrawlScopeManager` nel
   registro), non query su SYSTEMINDEX che userebbero percorsi localizzati;
 - legenda dei colori nelle impostazioni.

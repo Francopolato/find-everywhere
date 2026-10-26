@@ -8,6 +8,7 @@ Il risultato è messo in cache: la stessa .lnk viene risolta una sola volta.
 from __future__ import annotations
 
 import os
+import stat as statmod
 import threading
 
 LINK_EXT = ".lnk"
@@ -32,19 +33,19 @@ def _shell():
 def _looks_like_folder(target: str) -> bool:
     """True se il target del collegamento è una cartella.
 
-    Se il target non è raggiungibile (share di rete offline, unità scollegata)
-    `isdir` fallisce: in quel caso si usa l'euristica "l'ultimo elemento non ha
-    estensione", perché le cartelle di solito non ne hanno.
+    Un solo `stat`: se il target **esiste** decide il filesystem (nessuna
+    euristica, quindi un file senza estensione resta un file); se non è
+    raggiungibile (share di rete offline, unità scollegata, percorso inesistente)
+    si usa l'euristica "l'ultimo elemento non ha estensione" → cartella.
     """
     if not target:
         return False
     try:
-        if os.path.isdir(target):
-            return True
+        st = os.stat(target)
     except OSError:
-        return False
-    leaf = os.path.basename(str(target).rstrip("\\/"))
-    return bool(leaf) and "." not in leaf
+        leaf = os.path.basename(str(target).rstrip("\\/"))
+        return bool(leaf) and "." not in leaf
+    return statmod.S_ISDIR(st.st_mode)
 
 
 def resolve_link(path: str) -> tuple[str, bool]:
