@@ -381,7 +381,10 @@ pianificazione con "All'accesso" + ritardo di 30 s, se vuoi che parta più tardi
 Impostazioni → sezione **Aggiornamenti**:
 
 * **Controlla aggiornamenti** confronta la versione installata con l'ultima
-  release GitHub (`releases/latest`);
+  **release** GitHub (`releases/latest`, l'unica con lo zip scaricabile) e legge
+  anche l'elenco dei **tag**: se esiste un tag più recente della release (tag
+  creato ma release non ancora pubblicata) il messaggio lo dice, invece di
+  mostrare solo la release e sembrare un controllo rotto;
 * **Aggiorna** applica l'aggiornamento, in due modi:
   * installazione **da sorgente**: esegue `git pull --ff-only` nella cartella del
     progetto (serve `git` nel PATH);
