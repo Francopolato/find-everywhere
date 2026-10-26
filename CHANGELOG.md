@@ -4,6 +4,15 @@ Modifiche rilevanti a **find-everywhere**, dalla più recente. Le versioni
 corrispondono ai tag git (`vX.Y`); le note complete di ogni release sono nella
 pagina [Releases](https://github.com/Francopolato/find-everywhere/releases).
 
+## v1.30 — esclusioni applicate anche ai risultati di Windows Search
+
+- le esclusioni ora filtrano i risultati di **tutte le fonti**, compreso l'indice
+  di Windows: una cartella esclusa sparisce dai risultati dell'app senza toccare
+  l'indice di Windows;
+- una voce può essere un **nome di cartella** (`Temp`, vale per ogni cartella con
+  quel nome) oppure un **percorso** (`C:\Temp\lavoro`, `\\server\share\x`: la
+  cartella e le sottocartelle); virgolette attorno alla voce sono ammesse.
+
 ## v1.29 — limite risultati e tipo dei collegamenti
 
 - in Impostazioni: **«Risultati massimi nella ricerca»**, `0` = **illimitati**

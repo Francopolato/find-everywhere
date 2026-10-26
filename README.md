@@ -319,10 +319,14 @@ Note:
   registrate, errori non gestiti). Se qualcosa non va, quel file dice perché.
 * `node_modules`, `__pycache__`, `.git`, `.venv` sono esclusi di default per
   velocità: l'elenco si gestisce dalla GUI (Impostazioni → **Esclusioni**:
-  Aggiungi / Modifica / Rimuovi, doppio clic per modificare una voce). Sono
-  **nomi di cartella**, non percorsi, confrontati senza distinzione di
-  maiuscole; dopo il salvataggio parte l'indicizzazione, così le nuove
-esclusioni valgono anche per l'indice già esistente.
+  Aggiungi / Modifica / Rimuovi, doppio clic per modificare una voce). Una voce
+  può essere un **nome di cartella** (`Temp`: vale per ogni cartella con quel
+  nome) oppure un **percorso** (`C:\Temp\lavoro`, `\\server\share\x`: quella
+  cartella e le sue sottocartelle). Il filtro vale per i risultati di **tutte le
+  fonti**, compreso l'indice di Windows — che **non** viene modificato: la
+  cartella sparisce solo dai risultati di questa app.
+  Confronto senza distinzione di maiuscole; dopo il salvataggio parte
+  l'indicizzazione, così le esclusioni valgono anche per l'indice già esistente.
 * L'indice cresce: per un indice pulito usa **Ricostruisci indice** nelle
   impostazioni.
 * **Risultati massimi** (`max_results`): si imposta nelle impostazioni; `0` =

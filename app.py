@@ -41,7 +41,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.29"
+VERSION = "1.30"
 
 
 def log(msg: str) -> None:
@@ -750,6 +750,31 @@ class SpotlightApp:
                 best, best_len = kind, len(root)
         return best
 
+    def _is_excluded(self, path: str) -> bool:
+        """True se il percorso sta in una cartella esclusa.
+
+        Le voci senza separatori sono **nomi di cartella** (es. `Temp`: vale per
+        ogni cartella con quel nome); le voci con separatori sono **percorsi**
+        (quella cartella e tutte le sue sottocartelle). Il filtro vale per i
+        risultati di **tutte** le fonti, compreso l'indice di Windows.
+        """
+        low = os.path.normpath(str(path or "")).lower()
+        if not low:
+            return False
+        parts = [p for p in low.split(os.sep) if p]
+        for entry in self.cfg.get("excludes") or []:
+            e = str(entry).strip().strip('"').strip("'")
+            if not e:
+                continue
+            e = e.lower()
+            if "\\" in e or "/" in e:
+                base = os.path.normpath(e)
+                if low == base or low.startswith(base + os.sep):
+                    return True
+            elif e in parts:
+                return True
+        return False
+
     def _merge(self, items, source):
         added = False
         links_on = bool(self.cfg.get("search_links", True))
@@ -758,6 +783,8 @@ class SpotlightApp:
             if not path:
                 continue
             if not links_on and is_link(path):
+                continue
+            if self._is_excluded(path):
                 continue
             if is_link(path):
                 # un .lnk che punta a una cartella va trattato come cartella
@@ -1462,9 +1489,13 @@ class SettingsWindow(tk.Toplevel):
                  font=self.f_small).pack(side="left")
 
         # ------- esclusioni -------
-        box5 = self._section("Esclusioni (cartelle ignorate dalla scansione)")
-        tk.Label(box5, text="Nomi di cartella, non percorsi (es. node_modules, .git, "
-                            "Temp). Confronto senza distinzione di maiuscole.",
+        box5 = self._section("Esclusioni (cartelle ignorate dalla ricerca)")
+        tk.Label(box5, text="Un **nome** (es. node_modules, .git, Temp) esclude ogni "
+                            "cartella con quel nome; un **percorso** (es. "
+                            "C:\\Temp\\lavoro, \\\\\\\\server\\share\\x) esclude quella "
+                            "cartella e le sue sottocartelle. Vale anche per i "
+                            "risultati dell'indice di Windows (l'indice non viene "
+                            "toccato).",
                  bg=C["bg2"], fg=C["dim"], font=self.f_small, anchor="w",
                  justify="left").pack(fill="x", padx=10, pady=(2, 0))
         exclwrap = tk.Frame(box5, bg=C["bg2"])
@@ -1709,7 +1740,10 @@ class SettingsWindow(tk.Toplevel):
 
     def _set_exclude(self, value: str, index: int | None = None) -> bool:
         """Aggiunge (index=None) o modifica una voce di esclusione."""
-        val = (value or "").strip().strip("\\/")
+        val = (value or "").strip().strip('"').strip("'")
+        if "\\" in val or "/" in val:
+            with suppress(Exception):
+                val = os.path.normpath(val)
         if not val:
             return False
         others = [e for i, e in enumerate(self.cfg["excludes"]) if i != index]
