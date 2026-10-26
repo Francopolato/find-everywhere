@@ -41,7 +41,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.30"
+VERSION = "1.31"
 
 
 def log(msg: str) -> None:
@@ -683,7 +683,9 @@ class SpotlightApp:
         # 1) risultati istantanei dall'indice locale (gia' scansionato)
         maxr = self.cfg.get("max_results", 120)
         db_limit = maxr if isinstance(maxr, int) and maxr > 0 else 100000
-        self._merge(self.db.search(q, limit=db_limit), "index")
+        self._merge(self.db.search(
+            q, limit=db_limit,
+            path_fallback=bool(self.cfg.get("win_path_search", True))), "index")
         self._render()
 
         # 2) indice di Windows (thread separato; con i jolly puo' richiedere
@@ -2139,3 +2141,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

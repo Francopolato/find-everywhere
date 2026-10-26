@@ -77,7 +77,8 @@ class FileIndex:
         return conn
 
     # ---------------- query ----------------
-    def search(self, query: str, limit: int = 60) -> list[dict]:
+    def search(self, query: str, limit: int = 60,
+               path_fallback: bool = True) -> list[dict]:
         q = (query or "").strip().lower()
         if is_empty(q):
             return []
@@ -88,7 +89,8 @@ class FileIndex:
             "ORDER BY LENGTH(name) ASC LIMIT ?",
             (like, limit),
         ).fetchall()
-        if len(rows) < max(3, limit // 4):
+        # fallback sul percorso (solo se la ricerca nel percorso è attiva)
+        if path_fallback and len(rows) < max(3, limit // 4):
             extra = conn.execute(
                 "SELECT path, name, dir, is_dir FROM files WHERE name_lower NOT LIKE ? ESCAPE '\\' "
                 "AND dir LIKE ? ESCAPE '\\' ORDER BY LENGTH(name) ASC LIMIT ?",

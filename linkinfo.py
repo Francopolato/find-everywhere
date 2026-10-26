@@ -29,6 +29,24 @@ def _shell():
     return win32com.client.Dispatch("WScript.Shell")
 
 
+def _looks_like_folder(target: str) -> bool:
+    """True se il target del collegamento è una cartella.
+
+    Se il target non è raggiungibile (share di rete offline, unità scollegata)
+    `isdir` fallisce: in quel caso si usa l'euristica "l'ultimo elemento non ha
+    estensione", perché le cartelle di solito non ne hanno.
+    """
+    if not target:
+        return False
+    try:
+        if os.path.isdir(target):
+            return True
+    except OSError:
+        return False
+    leaf = os.path.basename(str(target).rstrip("\\/"))
+    return bool(leaf) and "." not in leaf
+
+
 def resolve_link(path: str) -> tuple[str, bool]:
     """Ritorna (target, target_e_cartella). ("", False) se non risolvibile."""
     key = str(path).lower()
@@ -41,7 +59,7 @@ def resolve_link(path: str) -> tuple[str, bool]:
     is_dir = False
     try:
         target = _shell().CreateShortcut(path).TargetPath or ""
-        is_dir = bool(target) and os.path.isdir(target)
+        is_dir = _looks_like_folder(target)
     except Exception:  # noqa: BLE001 - collegamento rotto o non leggibile
         target, is_dir = "", False
 

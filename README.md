@@ -82,7 +82,8 @@ che parte solo con l'app inattiva da 20 secondi.
 
 Un `.lnk` che punta a una cartella viene trattato come **cartella** (compare in
 `Solo cartelle` e in `Tutti`), uno che punta a un file come **file** (`Solo file`
-e `Tutti`).
+e `Tutti`). Se la destinazione non è raggiungibile (share di rete offline) si usa
+l'euristica "l'ultimo elemento del percorso non ha estensione" → cartella.
 
 | colore dell'icona | fonte |
 | --- | --- |
@@ -130,7 +131,8 @@ La ricerca nel contenuto (indice di Windows) si accende e si spegne nelle
 impostazioni, sezione *Indice di Windows Search* (**disattivata di default**), insieme a
 **«Cerca anche nel percorso»**: con il percorso attivo si trovano anche le
 cartelle che *contengono* il file cercato; **spento** la ricerca guarda solo
-l'ultimo elemento del percorso, cioè il nome del file o della cartella.
+l'ultimo elemento del percorso, cioè il nome del file o della cartella — vale per
+Windows Search **e** per l'indice locale dell'app.
 * **collegamenti**: inclusi nei risultati per default (`.lnk`),
   disattivabili da Impostazioni → *Mostra anche i collegamenti*.
 

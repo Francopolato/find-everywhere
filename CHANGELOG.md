@@ -4,6 +4,16 @@ Modifiche rilevanti a **find-everywhere**, dalla più recente. Le versioni
 corrispondono ai tag git (`vX.Y`); le note complete di ogni release sono nella
 pagina [Releases](https://github.com/Francopolato/find-everywhere/releases).
 
+## v1.31 — percorso spento ovunque e collegamenti a cartelle più affidabili
+
+- con **«Cerca anche nel percorso» spento** anche l'**indice locale** non fa più
+  il fallback sul nome della cartella contenitrice: si vedevano sottocartelle
+  della cartella cercata, comportamento da ricerca per percorso;
+- un `.lnk` verso una cartella **non raggiungibile** (share di rete offline) ora
+  viene riconosciuto come cartella: se il target non esiste e l'ultimo elemento
+  del percorso non ha estensione, viene trattato come cartella. Prima finiva
+  sempre in `Solo file`.
+
 ## v1.30 — esclusioni applicate anche ai risultati di Windows Search
 
 - le esclusioni ora filtrano i risultati di **tutte le fonti**, compreso l'indice
