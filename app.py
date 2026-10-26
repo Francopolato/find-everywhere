@@ -41,7 +41,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.32"
+VERSION = "1.33"
 
 
 def log(msg: str) -> None:
@@ -1903,15 +1903,31 @@ class SettingsWindow(tk.Toplevel):
             return
         if kind == "check":
             self._release = data if isinstance(data, dict) else None
-            tag = (self._release or {}).get("tag") or ""
-            if tag and updater.is_newer(tag, VERSION):
+            rel = (self._release or {}).get("tag") or ""
+            tag_max = (self._release or {}).get("tag_max") or ""
+            if rel and updater.is_newer(rel, VERSION):
                 self.btn_update.config(state="normal")
                 self.upd_lbl.config(
-                    text=f"Disponibile {tag} (installata v{VERSION}). Premi «Aggiorna».",
-                    fg=C["accent"])
+                    text=f"Disponibile la release {rel} (installata v{VERSION}). "
+                         f"Premi «Aggiorna».", fg=C["accent"])
+            elif tag_max and updater.is_newer(tag_max, rel):
+                # c'e' un tag piu' recente ma non e' (ancora) una release
+                if updater.is_frozen():
+                    self.btn_update.config(state="disabled")
+                    self.upd_lbl.config(
+                        text=f"Ultima release: {rel or 'n/d'}. Esiste il tag {tag_max} "
+                             f"ma non e' ancora pubblicato come release: non c'e' uno "
+                             f"zip da scaricare. Pubblica la release su GitHub.",
+                        fg=C["warn"])
+                else:
+                    self.btn_update.config(state="normal")
+                    self.upd_lbl.config(
+                        text=f"Ultima release: {rel or 'n/d'} · esiste il tag {tag_max} "
+                             f"(non pubblicato): «Aggiorna» fa git pull dal repository.",
+                        fg=C["warn"])
             else:
                 self.upd_lbl.config(
-                    text=f"Sei aggiornato: v{VERSION} (ultima release: {tag or 'n/d'}).",
+                    text=f"Sei aggiornato: v{VERSION} (ultima release: {rel or 'n/d'}).",
                     fg="#5fbf7f")
             return
         ok, msg = data if isinstance(data, tuple) else (False, str(data))
@@ -2141,5 +2157,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 

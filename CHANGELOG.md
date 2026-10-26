@@ -4,6 +4,16 @@ Modifiche rilevanti a **find-everywhere**, dalla più recente. Le versioni
 corrispondono ai tag git (`vX.Y`); le note complete di ogni release sono nella
 pagina [Releases](https://github.com/Francopolato/find-everywhere/releases).
 
+## v1.33 — controllo aggiornamenti consapevole dei tag
+
+- il controllo legge anche l'elenco dei **tag**: se esiste un tag più recente
+  dell'ultima release (tag creato ma release non pubblicata) lo scrive nel
+  messaggio — es. «Ultima release: v1.30 · esiste il tag v1.32 (non pubblicato):
+  «Aggiorna» fa git pull». Prima sembrava un controllo rotto perché veniva
+  mostrata solo la release;
+- da **eseguibile**, in quel caso il pulsante `Aggiorna` resta disattivato e il
+  messaggio spiega che non c'è ancora uno zip da scaricare.
+
 ## v1.32 — classificazione dei collegamenti: il filesystem ha la precedenza
 
 - un solo `stat` sul target: se **esiste** è il filesystem a dire se è cartella o

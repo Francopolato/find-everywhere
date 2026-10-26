@@ -24,6 +24,7 @@ import zipfile
 
 REPO = "Francopolato/find-everywhere"
 API_LATEST = f"https://api.github.com/repos/{REPO}/releases/latest"
+API_TAGS = f"https://api.github.com/repos/{REPO}/tags?per_page=100"
 RELEASES_PAGE = f"https://github.com/{REPO}/releases"
 TIMEOUT = 30
 
@@ -69,7 +70,12 @@ def is_newer(latest: str, current: str) -> bool:
 
 
 def latest_release() -> dict:
-    """Dati dell'ultima release: {tag, zip, html, assets}."""
+    """Dati dell'ultima release: {tag, zip, html, assets, tag_max, tag_max_name}.
+
+    `tag` è l'ultima **release** pubblicata (l'unica con lo zip scaricabile);
+    `tag_max` è il tag più alto esistente, che può essere più recente della
+    release (tag creato ma release non ancora pubblicata).
+    """
     try:
         with _open(API_LATEST, {"User-Agent": "find-everywhere-updater",
                                 "Accept": "application/vnd.github+json"}) as resp:
@@ -88,12 +94,38 @@ def latest_release() -> dict:
         if str(asset.get("name", "")).lower().endswith(".zip"):
             zip_url = asset.get("browser_download_url") or ""
             break
+
+    tag_max_name, tag_max = _highest_tag()
     return {
         "tag": data.get("tag_name") or "",
         "zip": zip_url,
         "html": data.get("html_url") or RELEASES_PAGE,
         "assets": [a.get("name") for a in assets],
+        "tag_max": tag_max,
+        "tag_max_name": tag_max_name,
     }
+
+
+def _highest_tag() -> tuple[str, str]:
+    """(nome, versione) del tag più alto, es. ('v1.32', '1.32')."""
+    try:
+        with _open(API_TAGS, {"User-Agent": "find-everywhere-updater",
+                              "Accept": "application/vnd.github+json"}) as resp:
+            raw = resp.read()
+        tags = json.loads(raw)
+    except Exception:  # noqa: BLE001 - se i tag non si leggono si prosegue
+        return "", ""
+    best_name = ""
+    best_ver: tuple[int, ...] = (0,)
+    if isinstance(tags, list):
+        for item in tags:
+            if not isinstance(item, dict):
+                continue
+            name = str(item.get("name", ""))
+            ver = parse_version(name)
+            if ver > best_ver:
+                best_ver, best_name = ver, name
+    return best_name, (best_name[1:] if best_name[:1] in ("v", "V") else best_name)
 
 
 def update_from_git(app_dir: str) -> tuple[bool, str]:
