@@ -118,6 +118,8 @@ Altro:
   percorso (`.pdf`, `.xlsx`, …);
 * **nomi lunghi**: troncati con `…` **prima dell'estensione**
   (`contratto quadro molto lungo … 2….pdf`), così il tipo di file resta leggibile;
+* **percorso completo**: tenendo il mouse fermo sul nome o sul percorso (≈0,6 s)
+  compare un tooltip con il percorso intero e, per i `.lnk`, anche la destinazione;
 * **filtro**: in alto a destra il pulsante `Tutti` / `Solo file` / `Solo cartelle`
   (anche `Ctrl+T`); la scelta è **persistente**, anche dopo il riavvio. Significato:
   * `Tutti` — file e cartelle, per nome; in più le corrispondenze nel **testo**

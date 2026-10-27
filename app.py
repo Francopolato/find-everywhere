@@ -41,7 +41,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.33"
+VERSION = "1.34"
 
 
 def log(msg: str) -> None:
@@ -284,6 +284,8 @@ class SpotlightApp:
         self._quitting = False
         self._suppress_hide = False
         self._tick_count = 0
+        self._tip_after = None
+        self._tip_win: tk.Toplevel | None = None
         self.win_info: dict = {}
         self.filter = self.cfg.get("filter", "all")
         if self.filter not in self._filter_modes():
@@ -521,6 +523,7 @@ class SpotlightApp:
     def hide(self):
         if self._settings_open:
             return
+        self._tip_cancel()
         self.root.withdraw()
 
     def toggle(self):
@@ -533,6 +536,7 @@ class SpotlightApp:
         """Chiude davvero il processo (le hotkey vengono deregistrate)."""
         log("uscita")
         self._quitting = True
+        self._tip_cancel()
         with suppress(Exception):
             self.hotkeys.stop()
         with suppress(Exception):
@@ -926,7 +930,63 @@ class SpotlightApp:
             return name[: limit - 1] + "…"
         return root[:keep] + "…" + ext
 
+    # ------------------------------------------------------- tooltip percorso
+    def _tip_text(self, item) -> str:
+        path = str(item.get("path") or "")
+        target = str(item.get("link_target") or "")
+        name = str(item.get("name") or "")
+        lines = [path]
+        if name and os.path.basename(path).lower() != name.lower():
+            lines.insert(0, name)
+        if item.get("is_link") and target:
+            lines.append(f"→ {target}")
+        return "\n".join(lines)
+
+    def _tip_cancel(self):
+        if self._tip_after is not None:
+            with suppress(Exception):
+                self.root.after_cancel(self._tip_after)
+            self._tip_after = None
+        if self._tip_win is not None:
+            with suppress(Exception):
+                self._tip_win.destroy()
+            self._tip_win = None
+
+    def _tip_schedule(self, item):
+        """Mostra il percorso completo dopo ~600 ms di mouse fermo sulla riga."""
+        self._tip_cancel()
+        self._tip_after = self.root.after(600, lambda: self._tip_show(item))
+
+    def _tip_show(self, item):
+        self._tip_after = None
+        if self._quitting or self.root.state() == "withdrawn":
+            return
+        text = self._tip_text(item)
+        if not text:
+            return
+        self._tip_cancel()
+        try:
+            x, y = self.root.winfo_pointerxy()
+        except Exception:  # noqa: BLE001 - finestra in chiusura
+            return
+        win = tk.Toplevel(self.root)
+        win.overrideredirect(True)
+        win.attributes("-topmost", True)
+        win.configure(bg=C["border"])
+        tk.Label(win, text=text, bg=C["bg2"], fg=C["fg"],
+                 font=self.font_small, justify="left",
+                 wraplength=int(620 * self.scale), padx=8, pady=5).pack(padx=1, pady=1)
+        win.update_idletasks()
+        w = win.winfo_reqwidth()
+        h = win.winfo_reqheight()
+        _dev, (left, top, right, bottom) = monitor_at(x, y)
+        px = min(max(x + 14, left + 4), max(left + 4, right - w - 8))
+        py = min(max(y + 20, top + 4), max(top + 4, bottom - h - 8))
+        win.geometry(f"+{int(px)}+{int(py)}")
+        self._tip_win = win
+
     def _render(self):
+        self._tip_cancel()
         for w in self.rows_frame.winfo_children():
             w.destroy()
         self.row_widgets = []
@@ -999,6 +1059,10 @@ class SpotlightApp:
                 w.bind("<Button-1>", lambda e, i=abs_idx: self._click_row(i))
                 w.bind("<Button-3>", lambda e, i=abs_idx: self._context_menu(e, i))
                 w.bind("<Enter>", lambda e, i=abs_idx: self._hover(i))
+            # tooltip con il percorso completo (nome e percorso sono troncati)
+            for w in (lbl_n, lbl_d, lbl_i):
+                w.bind("<Enter>", lambda e, it=item: self._tip_schedule(it), add="+")
+                w.bind("<Leave>", lambda e: self._tip_cancel(), add="+")
             self.row_widgets.append((abs_idx, f, box, lbl_i, lbl_n, lbl_d))
 
         self._paint_selection()

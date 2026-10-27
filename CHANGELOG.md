@@ -4,6 +4,15 @@ Modifiche rilevanti a **find-everywhere**, dalla più recente. Le versioni
 corrispondono ai tag git (`vX.Y`); le note complete di ogni release sono nella
 pagina [Releases](https://github.com/Francopolato/find-everywhere/releases).
 
+## v1.34 — tooltip con il percorso completo
+
+- tenendo il mouse fermo sul nome o sul percorso di un risultato (≈600 ms) compare
+  un **tooltip** con il percorso intero (e per i `.lnk` anche la destinazione
+  `→ ...`): nomi e percorsi restano troncati nella lista ma sono leggibili per
+  intero al volo;
+- il tooltip si chiude spostando il mouse, chiudendo la finestra o ridisegnando la
+  lista (nessun tooltip “orfano”); resta dentro l'area di lavoro del monitor.
+
 ## v1.33 — controllo aggiornamenti consapevole dei tag
 
 - il controllo legge anche l'elenco dei **tag**: se esiste un tag più recente
