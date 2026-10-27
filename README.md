@@ -70,6 +70,11 @@ Dalle impostazioni si può attivare anche un **aggiornamento periodico opzionale
 dell'indice (*Aggiorna l'indice in background ogni N minuti*: `0` = mai, minimo 5),
 che parte solo con l'app inattiva da 20 secondi.
 
+I file **spostati o cancellati** non restano a schermo: alla ricerca successiva i
+risultati dell'indice che non esistono più su un'unità locale vengono scartati
+subito, e quando una scansione completa ripulisce un percorso la lista si aggiorna
+anche mentre stai guardando (senza dover rilanciare la ricerca).
+
 ## Risultati
 
 **L'icona dice il tipo, il colore dice da dove arriva** (niente pallini generici):

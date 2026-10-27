@@ -4,6 +4,18 @@ Modifiche rilevanti a **find-everywhere**, dalla più recente. Le versioni
 corrispondono ai tag git (`vX.Y`); le note complete di ogni release sono nella
 pagina [Releases](https://github.com/Francopolato/find-everywhere/releases).
 
+## v1.36 — i file cancellati spariscono subito dai risultati
+
+- **alla ricerca successiva** i risultati dell'indice locale che non esistono più
+  su un'unità locale vengono scartati subito (prima restavano finché non passava
+  una pulizia dell'indice);
+- quando una scansione completa **ripulisce un percorso**, la lista a schermo viene
+  aggiornata in quel momento: le voci sparite vengono tolte e lo stato dice
+  «N voci rimosse (file spostati o cancellati)»;
+- la verifica di esistenza viene fatta solo su unità locali (fissa/rimovibile),
+  quindi nessun rallentamento sugli share di rete, dove vale la pulizia a fine
+  scansione.
+
 ## v1.35 — tema chiaro opzionale
 
 - nuovo blocco in Impostazioni → **Aspetto**: **Scuro** (default) oppure **Chiaro**

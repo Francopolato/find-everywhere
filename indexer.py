@@ -120,6 +120,23 @@ class FileIndex:
         )
         conn.commit()
 
+    def existing_paths(self, paths: list[str]) -> set[str]:
+        """Quali di questi percorsi sono ancora presenti nell'indice."""
+        found: set[str] = set()
+        if not paths:
+            return found
+        conn = self.conn()
+        for path in paths:
+            row = None
+            try:
+                row = conn.execute(
+                    "SELECT 1 FROM files WHERE path = ?", (path,)).fetchone()
+            except Exception:  # noqa: BLE001 - una voce non blocca le altre
+                row = None
+            if row:
+                found.add(path)
+        return found
+
     def prune_root(self, root: str, ts: float) -> int:
         """Rimuove dal root le voci non viste nell'ultima scansione (file spariti)."""
         conn = self.conn()
@@ -285,7 +302,7 @@ class LiveScanner(threading.Thread):
                 if not self.stop_event.is_set() and not errors:
                     removed = self.db.prune_root(root, mark)
                     if removed:
-                        self.events.put(("scan_pruned", self.scan_id, removed))
+                        self.events.put(("scan_pruned", self.scan_id, removed, root))
             self.events.put(("scan_done", self.scan_id, indexed))
         except Exception as exc:  # pragma: no cover
             self.events.put(("scan_error", self.scan_id, f"{type(exc).__name__}: {exc}"))

@@ -41,7 +41,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.35"
+VERSION = "1.36"
 
 
 def log(msg: str) -> None:
@@ -743,6 +743,8 @@ class SpotlightApp:
         self._merge(self.db.search(
             q, limit=db_limit,
             path_fallback=bool(self.cfg.get("win_path_search", True))), "index")
+        if self._drop_vanished():
+            log("rimossi risultati dell'indice non più esistenti sull'unità locale")
         self._render()
 
         # 2) indice di Windows (thread separato; con i jolly puo' richiedere
@@ -833,6 +835,53 @@ class SpotlightApp:
             elif e in parts:
                 return True
         return False
+
+    def _is_local_fixed(self, path: str) -> bool:
+        """True per un'unità locale (fissa o rimovibile): evita stat su share lenti."""
+        try:
+            drive = os.path.splitdrive(os.path.abspath(path))[0]
+            if not drive:
+                return False
+            dtype = int(ctypes.windll.kernel32.GetDriveTypeW(drive + "\\"))
+            return dtype in (2, 3)      # DRIVE_REMOVABLE, DRIVE_FIXED
+        except Exception:  # noqa: BLE001 - in dubbio non si tocca nulla
+            return False
+
+    def _drop_vanished(self) -> bool:
+        """Toglie dalla lista i risultati dell'indice locale che non esistono più."""
+        keep: list[dict] = []
+        dropped = 0
+        for r in self.results:
+            if (r.get("source") in ("index", "net", "excl")
+                    and self._is_local_fixed(r["path"])
+                    and not os.path.exists(r["path"])):
+                dropped += 1
+                self.seen.discard(r["path"].lower())
+                continue
+            keep.append(r)
+        if dropped:
+            self.results = keep
+            self._apply_filter()
+        return bool(dropped)
+
+    def _drop_pruned(self, root: str) -> None:
+        """Dopo la pulizia di un root, toglie dalla lista le voci non più indicizzate."""
+        prefix = os.path.normpath(root).lower() + os.sep
+        cand = [r for r in self.results
+                if r.get("source") in ("index", "net", "excl")
+                and os.path.normpath(r["path"]).lower().startswith(prefix)]
+        if not cand:
+            return
+        still = self.db.existing_paths([r["path"] for r in cand])
+        gone = {r["path"] for r in cand if r["path"] not in still}
+        if not gone:
+            return
+        self.results = [r for r in self.results if r["path"] not in gone]
+        for path in gone:
+            self.seen.discard(path.lower())
+        self._apply_filter()
+        self._render()
+        self.set_status(f"{len(gone)} voci rimosse (file spostati o cancellati)", "dim")
 
     def _merge(self, items, source):
         added = False
@@ -1416,7 +1465,10 @@ class SpotlightApp:
                                 f"{len(self.results)} trovati", "accent")
         elif kind == "scan_pruned":
             if ev[1] == self.scan_id:
-                log(f"indice ripulito durante la ricerca: {ev[2]} voci rimosse")
+                root = str(ev[3]) if len(ev) > 3 else ""
+                log(f"indice ripulito durante la ricerca: {ev[2]} voci rimosse ({root})")
+                if root:
+                    self._drop_pruned(root)
         elif kind == "scan_status":
             sid, text = ev[1], ev[2]
             if sid == self.scan_id:
