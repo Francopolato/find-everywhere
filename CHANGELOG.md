@@ -4,6 +4,16 @@ Modifiche rilevanti a **find-everywhere**, dalla più recente. Le versioni
 corrispondono ai tag git (`vX.Y`); le note complete di ogni release sono nella
 pagina [Releases](https://github.com/Francopolato/find-everywhere/releases).
 
+## v1.35 — tema chiaro opzionale
+
+- nuovo blocco in Impostazioni → **Aspetto**: **Scuro** (default) oppure **Chiaro**
+  in stile PowerToys Run (sfondo `#F3F3F3`, campi bianchi, testo scuro, accento
+  `#0067C0` — non bianco puro);
+- la scelta si applica **subito** (la finestra viene ridisegnata) e viene salvata
+  in `config.json` (`theme`), quindi resta anche dopo il riavvio;
+- anche i quattro colori dei risultati hanno una variante chiara, cosí restano
+  leggibili (blu `#0067C0`, grigio `#6E6E6E`, ambra `#9A6700`, viola `#6B3FA0`).
+
 ## v1.34 — tooltip con il percorso completo
 
 - tenendo il mouse fermo sul nome o sul percorso di un risultato (≈600 ms) compare

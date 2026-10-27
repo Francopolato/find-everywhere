@@ -307,6 +307,7 @@ Chiavi principali del config:
   "live_scan": true,
   "max_results": 120,
   "hide_on_focus_loss": true,
+  "theme": "dark",
   "refresh_minutes": 0
 }
 ```
@@ -332,6 +333,8 @@ Note:
   cartella sparisce solo dai risultati di questa app.
   Confronto senza distinzione di maiuscole; dopo il salvataggio parte
   l'indicizzazione, così le esclusioni valgono anche per l'indice già esistente.
+* **Tema** (`theme`): `dark` (default) o `light` — si sceglie in Impostazioni →
+  *Aspetto*, si applica subito e resta memorizzato.
 * L'indice cresce: per un indice pulito usa **Ricostruisci indice** nelle
   impostazioni.
 * **Risultati massimi** (`max_results`): si imposta nelle impostazioni; `0` =

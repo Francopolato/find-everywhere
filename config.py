@@ -54,6 +54,8 @@ DEFAULT_CONFIG = {
     "search_links": True,        # includi i collegamenti .lnk nei risultati
     "max_results": 120,
     "hide_on_focus_loss": True,
+    # tema della finestra: "dark" (default) oppure "light"
+    "theme": "dark",
     # aggiorna l'indice in background ogni N minuti (0 = mai, minimo 5)
     "refresh_minutes": 0,
     # filtro risultati: "all" | "files" | "dirs" (ciclo con Ctrl+T o click)

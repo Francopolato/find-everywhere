@@ -41,7 +41,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.34"
+VERSION = "1.35"
 
 
 def log(msg: str) -> None:
@@ -56,9 +56,9 @@ def log(msg: str) -> None:
         return
 
 # ----------------------------------------------------------------------------
-# Tema
+# Tema (scuro di default, chiaro in stile PowerToys Run)
 # ----------------------------------------------------------------------------
-C = {
+C_DARK = {
     "bg": "#14161b",
     "bg2": "#1b1e25",
     "bg3": "#232732",
@@ -66,10 +66,43 @@ C = {
     "dim": "#8b93a3",
     "accent": "#4d8dff",
     "sel": "#2c4a80",
+    "sel_fg": "#ffffff",
+    "sel_dim": "#b9c3d6",
     "border": "#2b3140",
     "warn": "#e0a33e",
     "err": "#e0605a",
+    "src_pc": "#4d8dff",
+    "src_index": "#8b93a3",
+    "src_net": "#e0a33e",
+    "src_excl": "#a78bfa",
 }
+
+C_LIGHT = {
+    "bg": "#f3f3f3",
+    "bg2": "#ffffff",
+    "bg3": "#eaeaea",
+    "fg": "#1b1b1b",
+    "dim": "#5f6368",
+    "accent": "#0067c0",
+    "sel": "#cce4ff",
+    "sel_fg": "#0b1a2a",
+    "sel_dim": "#3b4652",
+    "border": "#d6d6d6",
+    "warn": "#9a6700",
+    "err": "#c42b1c",
+    "src_pc": "#0067c0",
+    "src_index": "#6e6e6e",
+    "src_net": "#9a6700",
+    "src_excl": "#6b3fa0",
+}
+
+C: dict = dict(C_DARK)
+
+
+def set_palette(name: str) -> None:
+    """Cambia la palette in-place: tutti i riferimenti a C vedono i nuovi colori."""
+    C.clear()
+    C.update(C_LIGHT if str(name).lower() == "light" else C_DARK)
 
 SPINNER = "◐◓◑◒"
 MAX_ROWS = 11
@@ -258,6 +291,7 @@ class SpotlightApp:
         self.root = root
         root.report_callback_exception = self._tk_error
         self.cfg = load_config()
+        set_palette(self.cfg.get("theme", "dark"))
         self.db = FileIndex(DB_PATH)
         self.winsearch = WindowsSearch()
         self.hotkeys = HotkeyManager()
@@ -292,10 +326,10 @@ class SpotlightApp:
             self.filter = "all"
         self.view: list[dict] = []
         self.source_colors = {
-            "pc": C["accent"],        # indice di Windows Search (blu)
-            "index": C["dim"],        # voce orfana dell'indice locale (grigio)
-            "net": C["warn"],         # cartelle personalizzate di rete (ambra)
-            "excl": "#a78bfa",        # cartelle escluse dall'indice di Windows (viola)
+            "pc": C["src_pc"],        # indice di Windows Search
+            "index": C["src_index"],  # voce orfana dell'indice locale
+            "net": C["src_net"],      # cartelle personalizzate di rete
+            "excl": C["src_excl"],    # cartelle escluse dall'indice di Windows
         }
         self.root_kinds: dict[str, str] = {}
         self._rebuild_root_kinds()
@@ -309,6 +343,25 @@ class SpotlightApp:
 
         self.root.after(60, self._poll)
         self.root.after(120, self._tick)
+
+    def apply_theme(self):
+        """Applica il tema scelto e ridisegna la finestra principale."""
+        set_palette(self.cfg.get("theme", "dark"))
+        self._tip_cancel()
+        for w in list(self.root.winfo_children()):
+            if isinstance(w, tk.Toplevel):
+                continue          # non toccare le finestre di dialogo
+            with suppress(Exception):
+                w.destroy()
+        self.source_colors = {
+            "pc": C["src_pc"],
+            "index": C["src_index"],
+            "net": C["src_net"],
+            "excl": C["src_excl"],
+        }
+        self._build_ui()
+        if self.view:
+            self._render()
 
     # ------------------------------------------------------------------ UI
     @staticmethod
@@ -1070,14 +1123,15 @@ class SpotlightApp:
     def _paint_selection(self):
         for abs_idx, f, box, lbl_i, lbl_n, lbl_d in self.row_widgets:
             if abs_idx == self.sel:
-                bg, fg = C["sel"], "#ffffff"
+                bg, fg = C["sel"], C["sel_fg"]
             else:
                 bg, fg = C["bg"], C["fg"]
             f.config(bg=bg)
             box.config(bg=bg)
             lbl_i.config(bg=bg)
             lbl_n.config(bg=bg, fg=fg)
-            lbl_d.config(bg=bg, fg="#b9c3d6" if abs_idx == self.sel else C["dim"])
+            lbl_d.config(bg=bg,
+                         fg=C["sel_dim"] if abs_idx == self.sel else C["dim"])
 
     def _hover(self, idx):
         if idx != self.sel:
@@ -1487,6 +1541,19 @@ class SettingsWindow(tk.Toplevel):
         self.var_focus = tk.BooleanVar(value=bool(self.cfg.get("hide_on_focus_loss", True)))
         self._check(box1, "Nascondi quando la finestra perde il focus",
                     self.var_focus)
+
+        # ------- aspetto -------
+        box7 = self._section("Aspetto")
+        row_t = tk.Frame(box7, bg=C["bg2"])
+        row_t.pack(fill="x", padx=8, pady=6)
+        self.var_theme = tk.StringVar(value=str(self.cfg.get("theme", "dark")))
+        for value, label in (("dark", "Scuro (default)"),
+                             ("light", "Chiaro (stile PowerToys Run)")):
+            tk.Radiobutton(row_t, text=label, value=value, variable=self.var_theme,
+                           bg=C["bg2"], fg=C["fg"], selectcolor=C["bg3"],
+                           activebackground=C["bg2"], activeforeground=C["fg"],
+                           font=self.f_small, bd=0, highlightthickness=0,
+                           anchor="w").pack(side="left", padx=(0, 16))
         # ------- cartelle personalizzate -------
         box2 = self._section("Cartelle personalizzate (anche di rete: \\\\server\\share)")
         listwrap = tk.Frame(box2, bg=C["bg2"])
@@ -1512,10 +1579,10 @@ class SettingsWindow(tk.Toplevel):
                  font=self.f_small).grid(row=0, column=0, columnspan=2,
                                          sticky="w", pady=(0, 2))
         legend = (
-            (C["accent"], "indice di Windows Search"),
-            (C["warn"], "cartelle personalizzate di rete"),
-            ("#a78bfa", "cartelle escluse dall'indice di Windows (confermate)"),
-            (C["dim"], "voce rimasta nell'indice di una cartella rimossa"),
+            (C["src_pc"], "indice di Windows Search"),
+            (C["src_net"], "cartelle personalizzate di rete"),
+            (C["src_excl"], "cartelle escluse dall'indice di Windows (confermate)"),
+            (C["src_index"], "voce rimasta nell'indice di una cartella rimossa"),
         )
         for row, (color, label) in enumerate(legend, start=1):
             tk.Label(leg, text="   ", bg=color, bd=0).grid(row=row, column=0,
@@ -2039,7 +2106,9 @@ class SettingsWindow(tk.Toplevel):
 
         old_paths = list(self.app.cfg.get("paths", []))
         old_excludes = list(self.app.cfg.get("excludes", []))
+        old_theme = str(self.app.cfg.get("theme", "dark"))
         new = dict(self.app.cfg)
+        new["theme"] = str(self.var_theme.get() or "dark")
         new["hotkey"] = hk
         new["paths"] = list(self.cfg["paths"])
         new["scripts"] = [s for s in self.cfg["scripts"] if s.get("command")]
@@ -2084,6 +2153,8 @@ class SettingsWindow(tk.Toplevel):
         if (new["paths"] != old_paths or new["excludes"] != old_excludes) \
                 and new["index_on_startup"]:
             self.app.start_indexer()
+        if new["theme"] != old_theme:
+            self.app.apply_theme()
         self.app.show()
 
     def _cancel(self):
@@ -2221,6 +2292,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
