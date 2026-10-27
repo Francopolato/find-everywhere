@@ -47,7 +47,7 @@ per compilare l'exe vedi *Compilare*.
 Ogni ricerca unisce tre fonti, in ordine di velocità:
 
 | fonte | cosa fa | quando arriva |
-|---|---|---|
+| --- | --- | --- |
 | **Indice locale (SQLite)** | risultati già scansionati in precedenza | immediato (istantaneo) |
 | **Windows Search** (SYSTEMINDEX) | file **e cartelle** indicizzati da Windows: con un termine ricerca a metà parola, con più termini prefissi di parola, più il percorso contenitore e il contenuto dei documenti | ~0,1–0,4 s (thread separato) |
 | **Scansione viva** | `os.scandir` ricorsivo sulle cartelle configurate (es. share di rete) | in streaming, con la rotellina |
@@ -75,7 +75,7 @@ che parte solo con l'app inattiva da 20 secondi.
 **L'icona dice il tipo, il colore dice da dove arriva** (niente pallini generici):
 
 | icona | significato |
-|---|---|
+| --- | --- |
 | 📁 | cartella |
 | 📄 | file |
 | 📁↗ / 📄↗ | **collegamento** (`.lnk`) che punta a una cartella / a un file; a destra si vede la destinazione (`→ C:\...`) |
@@ -176,7 +176,7 @@ Come viene applicato:
 ## Tasti
 
 | tasto | azione |
-|---|---|
+| --- | --- |
 | `Invio` / click | apre l'elemento selezionato: file con l'app associata, **cartella** in Esplora file |
 | `Ctrl+Shift+E` (solo a finestra aperta) | apre l'elemento **in Explorer** (la cartella che lo contiene, con l'elemento selezionato) |
 | `Ctrl+Invio` | come sopra (alias) |
@@ -333,8 +333,10 @@ Note:
   cartella sparisce solo dai risultati di questa app.
   Confronto senza distinzione di maiuscole; dopo il salvataggio parte
   l'indicizzazione, così le esclusioni valgono anche per l'indice già esistente.
-* **Tema** (`theme`): `dark` (default) o `light` — si sceglie in Impostazioni →
-  *Aspetto*, si applica subito e resta memorizzato.
+* **Tema** (`theme`): `dark` (default) o `light` in **stile PowerToys Run**
+  (sfondo `#F3F3F3`, campi bianchi, testo scuro, accento `#0067C0`) — si sceglie
+  in Impostazioni → *Aspetto*, si applica subito e resta memorizzato; anche i
+  quattro colori dei risultati hanno la variante chiara.
 * L'indice cresce: per un indice pulito usa **Ricostruisci indice** nelle
   impostazioni.
 * **Risultati massimi** (`max_results`): si imposta nelle impostazioni; `0` =
