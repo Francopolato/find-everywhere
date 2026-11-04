@@ -4,6 +4,15 @@ Modifiche rilevanti a **find-everywhere**, dalla più recente. Le versioni
 corrispondono ai tag git (`vX.Y`); le note complete di ogni release sono nella
 pagina [Releases](https://github.com/Francopolato/find-everywhere/releases).
 
+## v1.39 — scorrimento del percorso: limite corretto
+
+- il fondo corsa ora coincide con la **larghezza visibile** della colonna
+  (`len - larghezza`) e non con `len - 10`: premendo `→` a fine corsa non si
+  accumulano più offset "oltre la fine", quindi **la prima `←` fa subito tornare
+  indietro** il testo (prima bisognava smaltire le pressioni in eccesso);
+- se il percorso sta tutto nella colonna, `←`/`→` non fanno nulla e non
+  accumulano posizione.
+
 ## v1.38 — scorrimento del percorso per riga, senza interferenze
 
 - la posizione dello scorrimento (`←`/`→`) è ora memorizzata **per riga**: tornando

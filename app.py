@@ -41,7 +41,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.38"
+VERSION = "1.39"
 
 
 def log(msg: str) -> None:
@@ -1096,6 +1096,10 @@ class SpotlightApp:
 
     PATH_STEP = 8
 
+    def _path_width(self) -> int:
+        """Larghezza (in caratteri) della colonna del percorso."""
+        return max(20, int((self.win_w - 210) / (8 * self.scale / 1.4)))
+
     def _dir_label_text(self, item) -> str:
         """Testo completo mostrato nella colonna del percorso (senza troncamento)."""
         if item.get("is_link") and item.get("link_target"):
@@ -1133,7 +1137,15 @@ class SpotlightApp:
         if not item:
             return "break"
         text = self._dir_label_text(item)
-        max_off = max(0, len(text) - 10)
+        width = self._path_width()
+        # oltre `len - width` la finestra non mostra nulla di nuovo: il limite
+        # deve coincidere con la larghezza visibile, altrimenti si accumulano
+        # pressioni "oltre la fine" che poi vanno smaltite per tornare indietro
+        max_off = max(0, len(text) - width)
+        if max_off == 0:
+            self.path_offs[str(item.get("path") or "")] = 0
+            self._render()
+            return "break"
         key = str(item.get("path") or "")
         off = self.path_offs.get(key, 0) + direction * self.PATH_STEP
         self.path_offs[key] = max(0, min(off, max_off))
@@ -1197,7 +1209,7 @@ class SpotlightApp:
                              font=self.font_row_b, anchor="w")
             lbl_n.pack(side="left")
 
-            avail = max(20, int((self.win_w - 210) / (8 * self.scale / 1.4)))
+            avail = self._path_width()
             full_dir = self._dir_label_text(item)
             if abs_idx == self.sel:
                 off = self.path_offs.get(str(item.get("path") or ""), 0)
