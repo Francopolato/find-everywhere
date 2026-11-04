@@ -4,6 +4,13 @@ Modifiche rilevanti a **find-everywhere**, dalla più recente. Le versioni
 corrispondono ai tag git (`vX.Y`); le note complete di ogni release sono nella
 pagina [Releases](https://github.com/Francopolato/find-everywhere/releases).
 
+## v1.47 — `→` verso la fine, `←` verso l'inizio (e percentuale in basso)
+
+- mappatura definitiva come richiesto: **`→` avanza verso la fine** del percorso,
+  **`←` torna verso l'inizio**;
+- mentre scorri, la riga di stato mostra la posizione, es.
+  `percorso 52%  ·  → fine   ← inizio`: così il verso è verificabile a colpo d'occhio.
+
 ## v1.46 — verso delle frecce del percorso: `→` = inizio, `←` = fine
 
 - mappatura **fissa** (nessuna impostazione): `→` riporta alla parte iniziale del
