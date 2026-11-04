@@ -4,6 +4,14 @@ Modifiche rilevanti a **find-everywhere**, dalla più recente. Le versioni
 corrispondono ai tag git (`vX.Y`); le note complete di ogni release sono nella
 pagina [Releases](https://github.com/Francopolato/find-everywhere/releases).
 
+## v1.40 — scorrimento del percorso: estremi raggiungibili
+
+- la finestra di testo è ora **esatta**: a inizio corsa si vede il **primo**
+  carattere del percorso, a fine corsa si arriva all'**ultimo** (prima i `…`
+  mangiavano 1-2 caratteri, quindi gli estremi non si raggiungevano mai);
+- nei tre casi (inizio / mezzo / fine) il testo occupa sempre la stessa larghezza,
+  quindi la colonna non “salta” mentre scorri.
+
 ## v1.39 — scorrimento del percorso: limite corretto
 
 - il fondo corsa ora coincide con la **larghezza visibile** della colonna

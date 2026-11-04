@@ -41,7 +41,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.39"
+VERSION = "1.40"
 
 
 def log(msg: str) -> None:
@@ -1113,16 +1113,22 @@ class SpotlightApp:
 
     @staticmethod
     def _window_text(text: str, off: int, width: int) -> str:
-        """Finestra di `width` caratteri a partire da `off`, con … ai bordi."""
-        if width <= 4 or len(text) <= width:
+        """Finestra di `width` caratteri: agli estremi mostra davvero il primo e
+        l'ultimo carattere del percorso."""
+        n = len(text)
+        if width <= 4 or n <= width:
             return text
-        off = max(0, min(off, len(text) - 1))
-        left = "…" if off > 0 else ""
-        room = max(1, width - len(left))
-        chunk = text[off:off + room]
-        if off + room < len(text):
-            chunk = chunk[: max(0, room - 1)] + "…"
-        return left + chunk
+        max_off = n - width
+        off = max(0, min(off, max_off))
+        if off <= 0:
+            # inizio: tronca la coda
+            return text[: width - 1] + "…"
+        if off >= max_off:
+            # fine: arriva esattamente all'ultimo carattere
+            return "…" + text[n - (width - 1):]
+        # in mezzo: … da entrambi i lati
+        room = width - 2
+        return "…" + text[off:off + room] + "…"
 
     def _scroll_path(self, direction: int):
         """←/→ scorrono il percorso della riga selezionata, solo mentre si
