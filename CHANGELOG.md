@@ -4,6 +4,17 @@ Modifiche rilevanti a **find-everywhere**, dalla più recente. Le versioni
 corrispondono ai tag git (`vX.Y`); le note complete di ogni release sono nella
 pagina [Releases](https://github.com/Francopolato/find-everywhere/releases).
 
+## v1.42 — colonna percorso allineata a sinistra (direzione di scorrimento chiara)
+
+- la colonna del percorso non è più allineata a **destra**: ora parte da sinistra e
+  occupa lo spazio residuo della riga. Prima l'ancora era il bordo destro, quindi lo
+  scorrimento sembrava avvenire nella **direzione sbagliata** (il testo “si
+  spostava” invece di scorrere);
+- con l'allineamento a sinistra il movimento è quello naturale: `→` fa avanzare il
+  percorso (i caratteri escono a sinistra ed entrano a destra, `←` torna indietro);
+- larghezza della colonna calcolata per riga in pixel, con margine di sicurezza,
+  così il testo non viene mai tagliato da Tk.
+
 ## v1.41 — larghezza del percorso calcolata per riga
 
 - la colonna del percorso ora viene dimensionata **in base alla lunghezza del nome**

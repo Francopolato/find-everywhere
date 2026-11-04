@@ -41,7 +41,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.41"
+VERSION = "1.42"
 
 
 def log(msg: str) -> None:
@@ -1110,7 +1110,7 @@ class SpotlightApp:
         fixed_px = icon_px + int(46 * self.scale)
         avail_px = max(40, self.win_w - name_px - fixed_px)
         char_px = max(1, self.font_row.measure("0"))
-        return max(10, int(avail_px / char_px))
+        return max(10, int(avail_px / char_px) - 2)   # margine di sicurezza
 
     def _dir_label_text(self, item) -> str:
         """Testo completo mostrato nella colonna del percorso (senza troncamento)."""
@@ -1235,8 +1235,9 @@ class SpotlightApp:
             else:
                 shown_dir = _shorten(full_dir, int(avail))
             lbl_d = tk.Label(f, text=shown_dir,
-                             bg=C["bg"], fg=C["dim"], font=self.font_row, anchor="e")
-            lbl_d.pack(side="right", padx=(8, 6))
+                             bg=C["bg"], fg=C["dim"], font=self.font_row,
+                             anchor="w", justify="left")
+            lbl_d.pack(side="left", fill="x", expand=True, padx=(8, 6))
 
             for w in (f, box, lbl_i, lbl_n, lbl_d):
                 w.bind("<Button-1>", lambda e, i=abs_idx: self._click_row(i))
