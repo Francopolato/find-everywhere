@@ -41,7 +41,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.36"
+VERSION = "1.37"
 
 
 def log(msg: str) -> None:
@@ -320,6 +320,8 @@ class SpotlightApp:
         self._tick_count = 0
         self._tip_after = None
         self._tip_win: tk.Toplevel | None = None
+        self.path_off = 0
+        self._nav_mode = False
         self.win_info: dict = {}
         self.filter = self.cfg.get("filter", "all")
         if self.filter not in self._filter_modes():
@@ -419,6 +421,8 @@ class SpotlightApp:
         self.entry.pack(side="left", fill="x", expand=True, pady=int(14 * self.scale))
         self.entry.bind("<KeyRelease>", self._on_query_change)
         self.entry.bind("<Down>", lambda e: self._move(1))
+        self.entry.bind("<Left>", lambda e: self._scroll_path(-1))
+        self.entry.bind("<Right>", lambda e: self._scroll_path(1))
         self.entry.bind("<Up>", lambda e: self._move(-1))
         self.entry.bind("<Return>", self._on_enter)
         self.entry.bind("<KP_Enter>", self._on_enter)
@@ -509,8 +513,8 @@ class SpotlightApp:
 
     def _update_hints(self):
         parts = ["Invio / click: apri", "Ctrl+Shift+E: apri in Explorer",
-                 "↑↓: naviga", "Ctrl+T: filtro", "Esc: chiudi",
-                 "Ctrl+,: impostazioni"]
+                 "↑↓: naviga", "←→: scorri percorso", "Ctrl+T: filtro",
+                 "Esc: chiudi", "Ctrl+,: impostazioni"]
         for s in self.cfg.get("scripts", []):
             if s.get("hotkey"):
                 parts.append(f"{s['hotkey'].upper()}: {s.get('name') or 'script'}")
@@ -709,6 +713,7 @@ class SpotlightApp:
         keysym = getattr(event, "keysym", "") if event is not None else ""
         if keysym in _NON_TEXT_KEYS:
             return
+        self._nav_mode = False        # si sta scrivendo: frecce = cursore
         text = self.entry.get().strip()
         if text == self.query_now and self._debounce is None:
             return
@@ -730,6 +735,8 @@ class SpotlightApp:
         self.results = []
         self.view = []
         self.seen = set()
+        self.path_off = 0
+        self._nav_mode = False
 
         if query_is_empty(q):
             self.busy_scan = False
@@ -1087,6 +1094,47 @@ class SpotlightApp:
         win.geometry(f"+{int(px)}+{int(py)}")
         self._tip_win = win
 
+    PATH_STEP = 8
+
+    def _dir_label_text(self, item) -> str:
+        """Testo completo mostrato nella colonna del percorso (senza troncamento)."""
+        if item.get("is_link") and item.get("link_target"):
+            return "→ " + str(item["link_target"])
+        text = str(item.get("dir") or "")
+        if str(item.get("source")) == "net":
+            text = "rete · " + text
+        if item.get("match") == "testo":
+            text = "testo · " + text
+        return text
+
+    @staticmethod
+    def _window_text(text: str, off: int, width: int) -> str:
+        """Finestra di `width` caratteri a partire da `off`, con … ai bordi."""
+        if width <= 4 or len(text) <= width:
+            return text
+        off = max(0, min(off, len(text) - 1))
+        left = "…" if off > 0 else ""
+        room = max(1, width - len(left))
+        chunk = text[off:off + room]
+        if off + room < len(text):
+            chunk = chunk[: max(0, room - 1)] + "…"
+        return left + chunk
+
+    def _scroll_path(self, direction: int):
+        """←/→ scorrono il percorso della riga selezionata, solo mentre si
+        naviga i risultati (dopo ↑/↓); altrimenti lasciano fare all'Entry."""
+        if not self._nav_mode or not self.view:
+            return None            # comportamento normale del cursore di testo
+        item = self._selected_item()
+        if not item:
+            return "break"
+        text = self._dir_label_text(item)
+        max_off = max(0, len(text) - 10)
+        self.path_off = max(0, min(self.path_off + direction * self.PATH_STEP,
+                                  max_off))
+        self._render()
+        return "break"
+
     def _render(self):
         self._tip_cancel()
         for w in self.rows_frame.winfo_children():
@@ -1145,15 +1193,12 @@ class SpotlightApp:
             lbl_n.pack(side="left")
 
             avail = max(20, int((self.win_w - 210) / (8 * self.scale / 1.4)))
-            if link and info["link_target"]:
-                dir_text = "→ " + info["link_target"]
+            full_dir = self._dir_label_text(item)
+            if abs_idx == self.sel:
+                shown_dir = self._window_text(full_dir, self.path_off, int(avail))
             else:
-                dir_text = item["dir"]
-                if source == "net":
-                    dir_text = "rete · " + dir_text
-            if item.get("match") == "testo":
-                dir_text = "testo · " + dir_text
-            lbl_d = tk.Label(f, text=_shorten(dir_text, int(avail)),
+                shown_dir = _shorten(full_dir, int(avail))
+            lbl_d = tk.Label(f, text=shown_dir,
                              bg=C["bg"], fg=C["dim"], font=self.font_row, anchor="e")
             lbl_d.pack(side="right", padx=(8, 6))
 
@@ -1190,6 +1235,8 @@ class SpotlightApp:
         if not self.view:
             return
         idx = max(0, min(idx, len(self.view) - 1))
+        if idx != self.sel:
+            self.path_off = 0          # cambio riga: percorso di nuovo dall'inizio
         self.sel = idx
         if scroll:
             if idx < self.offset:
@@ -1205,6 +1252,7 @@ class SpotlightApp:
     def _move(self, delta):
         if not self.view:
             return "break"
+        self._nav_mode = True          # da qui ←/→ scorrono il percorso
         self._select(self.sel + delta)
         return "break"
 

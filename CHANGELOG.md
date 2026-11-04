@@ -4,6 +4,15 @@ Modifiche rilevanti a **find-everywhere**, dalla più recente. Le versioni
 corrispondono ai tag git (`vX.Y`); le note complete di ogni release sono nella
 pagina [Releases](https://github.com/Francopolato/find-everywhere/releases).
 
+## v1.37 — scorrere il percorso con ← e →
+
+- dopo aver navigato i risultati con `↑`/`↓`, le frecce **`←`/`→`** fanno scorrere
+  orizzontalmente il percorso della riga selezionata (passo di 8 caratteri, con
+  `…` ai bordi): si legge tutto il path senza mouse;
+- appena si scrive nel campo di ricerca, le frecce tornano a spostare il cursore di
+  testo (nessun conflitto con la modifica della query);
+- cambiando riga o ricerca lo scorrimento riparte dall'inizio del percorso.
+
 ## v1.36 — i file cancellati spariscono subito dai risultati
 
 - **alla ricerca successiva** i risultati dell'indice locale che non esistono più
