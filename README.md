@@ -126,7 +126,8 @@ Altro:
 * **percorso completo**: tenendo il mouse fermo sul nome o sul percorso (≈0,6 s)
   compare un tooltip con il percorso intero e, per i `.lnk`, anche la destinazione;
   da tastiera, dopo aver navigato con `↑`/`↓`, le frecce **`←`/`→`** fanno scorrere
-  il percorso della riga selezionata (la posizione resta memorizzata per riga);
+  il percorso della riga selezionata — **`→` verso la fine, `←` verso l'inizio** — con
+  la posizione in basso (es. `percorso 52%`) e memoria per riga;
 * **filtro**: in alto a destra il pulsante `Tutti` / `Solo file` / `Solo cartelle`
   (anche `Ctrl+T`); la scelta è **persistente**, anche dopo il riavvio. Significato:
   * `Tutti` — file e cartelle, per nome; in più le corrispondenze nel **testo**
@@ -188,7 +189,7 @@ Come viene applicato:
 | `Ctrl+Shift+E` (solo a finestra aperta) | apre l'elemento **in Explorer** (la cartella che lo contiene, con l'elemento selezionato) |
 | `Ctrl+Invio` | come sopra (alias) |
 | `↑` / `↓`, rotellina | naviga i risultati |
-| `←` / `→` (dopo `↑`/`↓`) | scorrono il **percorso** della riga selezionata (8 caratteri per volta); la posizione è ricordata **per riga**, e appena scrivi le frecce tornano al cursore di testo |
+| `←` / `→` (dopo `↑`/`↓`) | scorrono il **percorso** della riga selezionata: **`→` verso la fine**, **`←` verso l'inizio** (8 caratteri per volta); la posizione è ricordata per riga, e appena scrivi le frecce tornano al cursore di testo |
 | `Ctrl+T` (o click su `Tutti`) | filtro: Tutti → Solo file → Solo cartelle → **Solo testo** (quest'ultimo solo se la ricerca nel contenuto è attiva) |
 | `Ctrl+,` o ⚙ | impostazioni |
 | `Esc` | chiude la finestra |

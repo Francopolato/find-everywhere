@@ -4,98 +4,16 @@ Modifiche rilevanti a **find-everywhere**, dalla più recente. Le versioni
 corrispondono ai tag git (`vX.Y`); le note complete di ogni release sono nella
 pagina [Releases](https://github.com/Francopolato/find-everywhere/releases).
 
-## v1.47 — `→` verso la fine, `←` verso l'inizio (e percentuale in basso)
+## v1.47 — scorrimento del percorso con la tastiera
 
-- mappatura definitiva come richiesto: **`→` avanza verso la fine** del percorso,
-  **`←` torna verso l'inizio**;
-- mentre scorri, la riga di stato mostra la posizione, es.
-  `percorso 52%  ·  → fine   ← inizio`: così il verso è verificabile a colpo d'occhio.
-
-## v1.46 — verso delle frecce del percorso: `→` = inizio, `←` = fine
-
-- mappatura **fissa** (nessuna impostazione): `→` riporta alla parte iniziale del
-  percorso, `←` avanza verso la parte finale. È la configurazione confermata
-  dall'utente come corretta; la colonna resta allineata a sinistra e la posizione è
-  ricordata per riga.
-
-## v1.45 — scorrimento del percorso: verso fisso, senza impostazioni
-
-- **rimossa** l'opzione `path_scroll_invert` e la casella in Impostazioni: il verso
-  è fisso come richiesto — `→` avanza verso la **fine** del percorso, `←` torna
-  verso l'**inizio** (era il comportamento che funzionava);
-- la chiave viene ignorata se ancora presente in un vecchio `config.json`.
-
-## v1.44 — frecce invertite di default
-
-- `path_scroll_invert` ora è **`true` di default**: `→` riporta verso l'inizio del
-  percorso e `←` avanza verso la fine (era l'impostazione che funzionava come
-  voluto); deselezionando la casella in Impostazioni → *Aspetto* si torna al verso
-  "classico".
-
-## v1.43 — inversione opzionale delle frecce per il percorso
-
-- nuova casella in Impostazioni → *Aspetto*: **«Inverti le frecce per scorrere il
-  percorso «←/→»»** (`path_scroll_invert`, default `false`);
-- serve se il verso di scorrimento non è quello atteso: con l'opzione attiva `→`
-  torna verso l'inizio e `←` avanza verso la fine (prima: `→` = verso la fine,
-  `←` = verso l'inizio, verificato con pressioni di tasto reali);
-- la preferenza è salvata in `config.json` e non richiede riavvio.
-
-## v1.42 — colonna percorso allineata a sinistra (direzione di scorrimento chiara)
-
-- la colonna del percorso non è più allineata a **destra**: ora parte da sinistra e
-  occupa lo spazio residuo della riga. Prima l'ancora era il bordo destro, quindi lo
-  scorrimento sembrava avvenire nella **direzione sbagliata** (il testo “si
-  spostava” invece di scorrere);
-- con l'allineamento a sinistra il movimento è quello naturale: `→` fa avanzare il
-  percorso (i caratteri escono a sinistra ed entrano a destra, `←` torna indietro);
-- larghezza della colonna calcolata per riga in pixel, con margine di sicurezza,
-  così il testo non viene mai tagliato da Tk.
-
-## v1.41 — larghezza del percorso calcolata per riga
-
-- la colonna del percorso ora viene dimensionata **in base alla lunghezza del nome**
-  di quella riga (misurata in pixel, non con una costante): il nome può occupare
-  fino a 52 caratteri, quindi lo spazio residuo cambia molto da riga a riga;
-- prima il testo scorrevole poteva essere più lungo dello spazio reale e Tk lo
-  tagliava dal lato sbagliato: lo scorrimento sembrava bloccato e non arrivava mai
-  agli estremi. Ora il testo sta sempre nella colonna, e a fine corsa si vede
-  l'ultima cartella, a inizio corsa la prima lettera del percorso.
-
-## v1.40 — scorrimento del percorso: estremi raggiungibili
-
-- la finestra di testo è ora **esatta**: a inizio corsa si vede il **primo**
-  carattere del percorso, a fine corsa si arriva all'**ultimo** (prima i `…`
-  mangiavano 1-2 caratteri, quindi gli estremi non si raggiungevano mai);
-- nei tre casi (inizio / mezzo / fine) il testo occupa sempre la stessa larghezza,
-  quindi la colonna non “salta” mentre scorri.
-
-## v1.39 — scorrimento del percorso: limite corretto
-
-- il fondo corsa ora coincide con la **larghezza visibile** della colonna
-  (`len - larghezza`) e non con `len - 10`: premendo `→` a fine corsa non si
-  accumulano più offset "oltre la fine", quindi **la prima `←` fa subito tornare
-  indietro** il testo (prima bisognava smaltire le pressioni in eccesso);
-- se il percorso sta tutto nella colonna, `←`/`→` non fanno nulla e non
-  accumulano posizione.
-
-## v1.38 — scorrimento del percorso per riga, senza interferenze
-
-- la posizione dello scorrimento (`←`/`→`) è ora memorizzata **per riga**: tornando
-  su un elemento ritrovi il percorso dov'era invece di ripartire sempre da zero;
-- **l'hover del mouse non ruba più la selezione**: il passaggio del puntatore è
-  gestito con `<Motion>` (movimento reale) e non con `<Enter>`, che Tk invia anche
-  ai widget appena ricreati sotto il cursore. Era questo a cambiare riga durante lo
-  scorrimento, facendolo sembrare “fermo prima” o “tutto a destra all'improvviso”.
-
-## v1.37 — scorrere il percorso con ← e →
-
-- dopo aver navigato i risultati con `↑`/`↓`, le frecce **`←`/`→`** fanno scorrere
-  orizzontalmente il percorso della riga selezionata (passo di 8 caratteri, con
-  `…` ai bordi): si legge tutto il path senza mouse;
-- appena si scrive nel campo di ricerca, le frecce tornano a spostare il cursore di
-  testo (nessun conflitto con la modifica della query);
-- cambiando riga o ricerca lo scorrimento riparte dall'inizio del percorso.
+- dopo aver navigato i risultati con `↑`/`↓` (o con il mouse), le frecce **`→`** e
+  **`←`** fanno scorrere il percorso della riga selezionata: **`→` avanza verso la
+  fine**, **`←` torna verso l'inizio**; passo di 8 caratteri, con `…` ai bordi;
+- mentre scorri la riga di stato mostra la posizione (es. `percorso 52% · → fine ← inizio`);
+- la posizione è memorizzata **per riga**; scrivendo nel campo di ricerca le frecce
+  tornano a spostare il cursore di testo;
+- la colonna del percorso è allineata a sinistra, dimensionata sulla lunghezza del
+  nome, e la finestra di testo arriva esattamente al primo e all'ultimo carattere.
 
 ## v1.36 — i file cancellati spariscono subito dai risultati
 
