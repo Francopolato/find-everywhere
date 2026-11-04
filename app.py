@@ -41,7 +41,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.45"
+VERSION = "1.46"
 
 
 def log(msg: str) -> None:
@@ -1165,7 +1165,9 @@ class SpotlightApp:
             self._render()
             return "break"
         key = str(item.get("path") or "")
-        off = self.path_offs.get(key, 0) + direction * self.PATH_STEP
+        # mappatura fissa (confermata dall'utente): → mostra la parte iniziale del
+        # percorso (il testo scorre verso destra), ← avanza verso la fine
+        off = self.path_offs.get(key, 0) - direction * self.PATH_STEP
         self.path_offs[key] = max(0, min(off, max_off))
         self._render()
         return "break"
