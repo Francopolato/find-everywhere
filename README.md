@@ -316,6 +316,7 @@ Chiavi principali del config:
   "max_results": 120,
   "hide_on_focus_loss": true,
   "theme": "dark",
+  "path_scroll_invert": false,
   "refresh_minutes": 0
 }
 ```
@@ -345,6 +346,8 @@ Note:
   (sfondo `#F3F3F3`, campi bianchi, testo scuro, accento `#0067C0`) — si sceglie
   in Impostazioni → *Aspetto*, si applica subito e resta memorizzato; anche i
   quattro colori dei risultati hanno la variante chiara.
+* **Inverti le frecce** (`path_scroll_invert`, default `false`): scambia il verso di
+  `←`/`→` per lo scorrimento del percorso (casella in Impostazioni → *Aspetto*).
 * L'indice cresce: per un indice pulito usa **Ricostruisci indice** nelle
   impostazioni.
 * **Risultati massimi** (`max_results`): si imposta nelle impostazioni; `0` =

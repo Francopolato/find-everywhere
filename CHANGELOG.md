@@ -4,6 +4,15 @@ Modifiche rilevanti a **find-everywhere**, dalla più recente. Le versioni
 corrispondono ai tag git (`vX.Y`); le note complete di ogni release sono nella
 pagina [Releases](https://github.com/Francopolato/find-everywhere/releases).
 
+## v1.43 — inversione opzionale delle frecce per il percorso
+
+- nuova casella in Impostazioni → *Aspetto*: **«Inverti le frecce per scorrere il
+  percorso «←/→»»** (`path_scroll_invert`, default `false`);
+- serve se il verso di scorrimento non è quello atteso: con l'opzione attiva `→`
+  torna verso l'inizio e `←` avanza verso la fine (prima: `→` = verso la fine,
+  `←` = verso l'inizio, verificato con pressioni di tasto reali);
+- la preferenza è salvata in `config.json` e non richiede riavvio.
+
 ## v1.42 — colonna percorso allineata a sinistra (direzione di scorrimento chiara)
 
 - la colonna del percorso non è più allineata a **destra**: ora parte da sinistra e

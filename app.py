@@ -41,7 +41,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.42"
+VERSION = "1.43"
 
 
 def log(msg: str) -> None:
@@ -1156,6 +1156,8 @@ class SpotlightApp:
             return "break"
         text = self._dir_label_text(item)
         width = self._path_width(item)
+        if self.cfg.get("path_scroll_invert"):
+            direction = -direction
         # oltre `len - width` la finestra non mostra nulla di nuovo: il limite
         # deve coincidere con la larghezza visibile, altrimenti si accumulano
         # pressioni "oltre la fine" che poi vanno smaltite per tornare indietro
@@ -1691,6 +1693,10 @@ class SettingsWindow(tk.Toplevel):
                            activebackground=C["bg2"], activeforeground=C["fg"],
                            font=self.f_small, bd=0, highlightthickness=0,
                            anchor="w").pack(side="left", padx=(0, 16))
+        self.var_invert = tk.BooleanVar(
+            value=bool(self.cfg.get("path_scroll_invert", False)))
+        self._check(box7, "Inverti le frecce per scorrere il percorso «←/→»",
+                    self.var_invert)
         # ------- cartelle personalizzate -------
         box2 = self._section("Cartelle personalizzate (anche di rete: \\\\server\\share)")
         listwrap = tk.Frame(box2, bg=C["bg2"])
@@ -2246,6 +2252,7 @@ class SettingsWindow(tk.Toplevel):
         old_theme = str(self.app.cfg.get("theme", "dark"))
         new = dict(self.app.cfg)
         new["theme"] = str(self.var_theme.get() or "dark")
+        new["path_scroll_invert"] = bool(self.var_invert.get())
         new["hotkey"] = hk
         new["paths"] = list(self.cfg["paths"])
         new["scripts"] = [s for s in self.cfg["scripts"] if s.get("command")]
