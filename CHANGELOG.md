@@ -4,6 +4,16 @@ Modifiche rilevanti a **find-everywhere**, dalla più recente. Le versioni
 corrispondono ai tag git (`vX.Y`); le note complete di ogni release sono nella
 pagina [Releases](https://github.com/Francopolato/find-everywhere/releases).
 
+## v1.41 — larghezza del percorso calcolata per riga
+
+- la colonna del percorso ora viene dimensionata **in base alla lunghezza del nome**
+  di quella riga (misurata in pixel, non con una costante): il nome può occupare
+  fino a 52 caratteri, quindi lo spazio residuo cambia molto da riga a riga;
+- prima il testo scorrevole poteva essere più lungo dello spazio reale e Tk lo
+  tagliava dal lato sbagliato: lo scorrimento sembrava bloccato e non arrivava mai
+  agli estremi. Ora il testo sta sempre nella colonna, e a fine corsa si vede
+  l'ultima cartella, a inizio corsa la prima lettera del percorso.
+
 ## v1.40 — scorrimento del percorso: estremi raggiungibili
 
 - la finestra di testo è ora **esatta**: a inizio corsa si vede il **primo**

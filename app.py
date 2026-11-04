@@ -41,7 +41,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.40"
+VERSION = "1.41"
 
 
 def log(msg: str) -> None:
@@ -1096,9 +1096,21 @@ class SpotlightApp:
 
     PATH_STEP = 8
 
-    def _path_width(self) -> int:
-        """Larghezza (in caratteri) della colonna del percorso."""
-        return max(20, int((self.win_w - 210) / (8 * self.scale / 1.4)))
+    def _path_width(self, item) -> int:
+        """Caratteri disponibili per la colonna percorso di quella riga.
+
+        Dipende dalla lunghezza del **nome** mostrato (che varia e viene troncato),
+        quindi si misura in pixel invece di usare una costante: se il testo fosse
+        più lungo dello spazio reale, Tk lo taglierebbe dal lato sbagliato e lo
+        scorrimento sembrerebbe bloccato.
+        """
+        name_px = self.font_row_b.measure(self._fit_name(item))
+        icon_px = self.font_icon.measure("\U0001F4C1\u2197") + int(10 * self.scale)
+        # padding: riga 16, icona 8, etichetta percorso 14, margine 8
+        fixed_px = icon_px + int(46 * self.scale)
+        avail_px = max(40, self.win_w - name_px - fixed_px)
+        char_px = max(1, self.font_row.measure("0"))
+        return max(10, int(avail_px / char_px))
 
     def _dir_label_text(self, item) -> str:
         """Testo completo mostrato nella colonna del percorso (senza troncamento)."""
@@ -1143,7 +1155,7 @@ class SpotlightApp:
         if not item:
             return "break"
         text = self._dir_label_text(item)
-        width = self._path_width()
+        width = self._path_width(item)
         # oltre `len - width` la finestra non mostra nulla di nuovo: il limite
         # deve coincidere con la larghezza visibile, altrimenti si accumulano
         # pressioni "oltre la fine" che poi vanno smaltite per tornare indietro
@@ -1215,7 +1227,7 @@ class SpotlightApp:
                              font=self.font_row_b, anchor="w")
             lbl_n.pack(side="left")
 
-            avail = self._path_width()
+            avail = self._path_width(item)
             full_dir = self._dir_label_text(item)
             if abs_idx == self.sel:
                 off = self.path_offs.get(str(item.get("path") or ""), 0)
