@@ -4,6 +4,15 @@ Modifiche rilevanti a **find-everywhere**, dalla più recente. Le versioni
 corrispondono ai tag git (`vX.Y`); le note complete di ogni release sono nella
 pagina [Releases](https://github.com/Francopolato/find-everywhere/releases).
 
+## v1.38 — scorrimento del percorso per riga, senza interferenze
+
+- la posizione dello scorrimento (`←`/`→`) è ora memorizzata **per riga**: tornando
+  su un elemento ritrovi il percorso dov'era invece di ripartire sempre da zero;
+- **l'hover del mouse non ruba più la selezione**: il passaggio del puntatore è
+  gestito con `<Motion>` (movimento reale) e non con `<Enter>`, che Tk invia anche
+  ai widget appena ricreati sotto il cursore. Era questo a cambiare riga durante lo
+  scorrimento, facendolo sembrare “fermo prima” o “tutto a destra all'improvviso”.
+
 ## v1.37 — scorrere il percorso con ← e →
 
 - dopo aver navigato i risultati con `↑`/`↓`, le frecce **`←`/`→`** fanno scorrere

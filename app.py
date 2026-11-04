@@ -41,7 +41,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.37"
+VERSION = "1.38"
 
 
 def log(msg: str) -> None:
@@ -320,7 +320,7 @@ class SpotlightApp:
         self._tick_count = 0
         self._tip_after = None
         self._tip_win: tk.Toplevel | None = None
-        self.path_off = 0
+        self.path_offs: dict[str, int] = {}   # scorrimento del percorso, per riga
         self._nav_mode = False
         self.win_info: dict = {}
         self.filter = self.cfg.get("filter", "all")
@@ -735,7 +735,7 @@ class SpotlightApp:
         self.results = []
         self.view = []
         self.seen = set()
-        self.path_off = 0
+        self.path_offs = {}
         self._nav_mode = False
 
         if query_is_empty(q):
@@ -1122,7 +1122,11 @@ class SpotlightApp:
 
     def _scroll_path(self, direction: int):
         """←/→ scorrono il percorso della riga selezionata, solo mentre si
-        naviga i risultati (dopo ↑/↓); altrimenti lasciano fare all'Entry."""
+        naviga i risultati (dopo ↑/↓); altrimenti lasciano fare all'Entry.
+
+        La posizione è memorizzata **per riga**: tornando su un elemento ritrovi
+        lo scorrimento dov'era.
+        """
         if not self._nav_mode or not self.view:
             return None            # comportamento normale del cursore di testo
         item = self._selected_item()
@@ -1130,8 +1134,9 @@ class SpotlightApp:
             return "break"
         text = self._dir_label_text(item)
         max_off = max(0, len(text) - 10)
-        self.path_off = max(0, min(self.path_off + direction * self.PATH_STEP,
-                                  max_off))
+        key = str(item.get("path") or "")
+        off = self.path_offs.get(key, 0) + direction * self.PATH_STEP
+        self.path_offs[key] = max(0, min(off, max_off))
         self._render()
         return "break"
 
@@ -1195,7 +1200,8 @@ class SpotlightApp:
             avail = max(20, int((self.win_w - 210) / (8 * self.scale / 1.4)))
             full_dir = self._dir_label_text(item)
             if abs_idx == self.sel:
-                shown_dir = self._window_text(full_dir, self.path_off, int(avail))
+                off = self.path_offs.get(str(item.get("path") or ""), 0)
+                shown_dir = self._window_text(full_dir, off, int(avail))
             else:
                 shown_dir = _shorten(full_dir, int(avail))
             lbl_d = tk.Label(f, text=shown_dir,
@@ -1205,7 +1211,9 @@ class SpotlightApp:
             for w in (f, box, lbl_i, lbl_n, lbl_d):
                 w.bind("<Button-1>", lambda e, i=abs_idx: self._click_row(i))
                 w.bind("<Button-3>", lambda e, i=abs_idx: self._context_menu(e, i))
-                w.bind("<Enter>", lambda e, i=abs_idx: self._hover(i))
+                # <Motion> e non <Enter>: Tk manda <Enter> anche ai widget appena
+                # creati sotto il puntatore, rubando la selezione a ogni ridisegno
+                w.bind("<Motion>", lambda e, i=abs_idx: self._hover(i))
             # tooltip con il percorso completo (nome e percorso sono troncati)
             for w in (lbl_n, lbl_d, lbl_i):
                 w.bind("<Enter>", lambda e, it=item: self._tip_schedule(it), add="+")
@@ -1235,8 +1243,6 @@ class SpotlightApp:
         if not self.view:
             return
         idx = max(0, min(idx, len(self.view) - 1))
-        if idx != self.sel:
-            self.path_off = 0          # cambio riga: percorso di nuovo dall'inizio
         self.sel = idx
         if scroll:
             if idx < self.offset:
