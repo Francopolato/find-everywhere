@@ -4,6 +4,13 @@ Modifiche rilevanti a **find-everywhere**, dalla più recente. Le versioni
 corrispondono ai tag git (`vX.Y`); le note complete di ogni release sono nella
 pagina [Releases](https://github.com/Francopolato/find-everywhere/releases).
 
+## v1.44 — frecce invertite di default
+
+- `path_scroll_invert` ora è **`true` di default**: `→` riporta verso l'inizio del
+  percorso e `←` avanza verso la fine (era l'impostazione che funzionava come
+  voluto); deselezionando la casella in Impostazioni → *Aspetto* si torna al verso
+  "classico".
+
 ## v1.43 — inversione opzionale delle frecce per il percorso
 
 - nuova casella in Impostazioni → *Aspetto*: **«Inverti le frecce per scorrere il

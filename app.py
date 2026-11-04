@@ -41,7 +41,7 @@ from winsearch import WindowsSearch
 
 LOG_PATH = os.path.join(app_dir(), "spotlightpy.log")
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.43"
+VERSION = "1.44"
 
 
 def log(msg: str) -> None:
@@ -1694,9 +1694,9 @@ class SettingsWindow(tk.Toplevel):
                            font=self.f_small, bd=0, highlightthickness=0,
                            anchor="w").pack(side="left", padx=(0, 16))
         self.var_invert = tk.BooleanVar(
-            value=bool(self.cfg.get("path_scroll_invert", False)))
-        self._check(box7, "Inverti le frecce per scorrere il percorso «←/→»",
-                    self.var_invert)
+            value=bool(self.cfg.get("path_scroll_invert", True)))
+        self._check(box7, "Inverti le frecce per scorrere il percorso «←/→» "
+                          "(attivo di default)", self.var_invert)
         # ------- cartelle personalizzate -------
         box2 = self._section("Cartelle personalizzate (anche di rete: \\\\server\\share)")
         listwrap = tk.Frame(box2, bg=C["bg2"])

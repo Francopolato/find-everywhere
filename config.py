@@ -57,7 +57,7 @@ DEFAULT_CONFIG = {
     # tema della finestra: "dark" (default) oppure "light"
     "theme": "dark",
     # inverti le frecce per lo scorrimento del percorso (←/→)
-    "path_scroll_invert": False,
+    "path_scroll_invert": True,
     # aggiorna l'indice in background ogni N minuti (0 = mai, minimo 5)
     "refresh_minutes": 0,
     # filtro risultati: "all" | "files" | "dirs" (ciclo con Ctrl+T o click)
